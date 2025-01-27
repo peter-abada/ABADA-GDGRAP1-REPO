@@ -11,79 +11,46 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-float x = 0.0f, y = 0.0f, z = 0.0f;
-//float scale_x = 1, scale_y = 1, scale_z = 1;
-//float axis_x = 0, axis_y = 0, axis_z = 0;
 
-static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    switch (key) {
-        case GLFW_KEY_D:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    x += 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_A:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    x -= 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_W:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    y += 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_S:
-                switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    y -= 0.01f;
-                    break;
-            }
-            break;
-        /*case GLFW_KEY_LEFT:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                axis_x -= 0.01f;
-                break;
-            }
-            break;
-        case GLFW_KEY_RIGHT:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                axis_x += 0.01f;
-                break;
-            }
-            break;
-        case GLFW_KEY_DOWN:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                axis_y -= 0.01f;
-                break;
-            }
-            break;
-        case GLFW_KEY_UP:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                axis_y += 0.01f;
-                break;
-            }
-            break;*/
-    }
-    
-}
+
+
+//static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+//    switch (key) {
+//        case GLFW_KEY_D:
+//            switch (action) {
+//                case GLFW_PRESS:
+//                case GLFW_REPEAT:
+//                    x += 0.01f;
+//                    break;
+//            }
+//            break;
+//        case GLFW_KEY_A:
+//            switch (action) {
+//                case GLFW_PRESS:
+//                case GLFW_REPEAT:
+//                    x -= 0.01f;
+//                    break;
+//            }
+//            break;
+//        case GLFW_KEY_W:
+//            switch (action) {
+//                case GLFW_PRESS:
+//                case GLFW_REPEAT:
+//                    y += 0.01f;
+//                    break;
+//            }
+//            break;
+//        case GLFW_KEY_S:
+//                switch (action) {
+//                case GLFW_PRESS:
+//                case GLFW_REPEAT:
+//                    y -= 0.01f;
+//                    break;
+//            }
+//            break;
+//    }
+//    
+//}
 
 int main(void)
 {
@@ -105,7 +72,7 @@ int main(void)
     glfwMakeContextCurrent(window);
     gladLoadGL();
 
-    glfwSetKeyCallback(window, Key_Callback);
+    /*glfwSetKeyCallback(window, Key_Callback);*/
 
     std::fstream vertSrc("Shaders/sample.vert");
     std::stringstream vertBuff;
@@ -190,8 +157,9 @@ int main(void)
     glm::mat3 identity_matrix3 = glm::mat3(1.0f);
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
 
-    float scale_x = 1.0f, scale_y = 1.0f, scale_z = 1.0f;
-    float axis_x = 0.0f, axis_y = 0.0f, axis_z = 0.0f;
+    float x = 0, y = 0, z = 0;
+    float scale_x = 1, scale_y = 1, scale_z = 1;
+    float axis_x = 0, axis_y = 0, axis_z = 0;
     float theta = 45;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
