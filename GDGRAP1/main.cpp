@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-float x = 0, y = 0, z = 0;
+float x = 0.0f, y = 0.0f, z = 0.0f;
 //float scale_x = 1, scale_y = 1, scale_z = 1;
 //float axis_x = 0, axis_y = 0, axis_z = 0;
 
@@ -190,8 +190,8 @@ int main(void)
     glm::mat3 identity_matrix3 = glm::mat3(1.0f);
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
 
-    float scale_x = 1, scale_y = 1, scale_z = 1;
-    float axis_x = 0, axis_y = 0, axis_z = 0;
+    float scale_x = 1.0f, scale_y = 1.0f, scale_z = 1.0f;
+    float axis_x = 0.0f, axis_y = 0.0f, axis_z = 0.0f;
     float theta = 45;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
