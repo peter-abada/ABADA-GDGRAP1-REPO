@@ -12,8 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 float x = 0.0f, y = 0.0f, z = 0.0f;
-//float scale_x = 1, scale_y = 1, scale_z = 1;
-//float axis_x = 0, axis_y = 0, axis_z = 0;
+float scale_x = 1, scale_y = 1, scale_z = 1;
+float axis_x = 0, axis_y = 1, axis_z = 0;
 
 static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     switch (key) {
@@ -49,11 +49,11 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
                     break;
             }
             break;
-        /*case GLFW_KEY_LEFT:
+        case GLFW_KEY_LEFT:
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_x -= 0.01f;
+                axis_x -= 0.1f;
                 break;
             }
             break;
@@ -61,7 +61,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_x += 0.01f;
+                axis_x += 0.1f;
                 break;
             }
             break;
@@ -69,7 +69,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_y -= 0.01f;
+                axis_y -= 0.1f;
                 break;
             }
             break;
@@ -77,10 +77,30 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_y += 0.01f;
+                axis_y += 0.1f;
                 break;
             }
-            break;*/
+            break;
+        case GLFW_KEY_E:
+            switch (action) {
+            case GLFW_PRESS:
+            case GLFW_REPEAT:
+                scale_x += 0.01f;
+                scale_y += 0.01f;
+                scale_z += 0.01f;
+                break;
+            }
+            break;
+        case GLFW_KEY_Q:
+            switch (action) {
+            case GLFW_PRESS:
+            case GLFW_REPEAT:
+                scale_x -= 0.01f;
+                scale_y -= 0.01f;
+                scale_z -= 0.01f;
+                break;
+            }
+            break;
     }
     
 }
@@ -189,10 +209,7 @@ int main(void)
 
     glm::mat3 identity_matrix3 = glm::mat3(1.0f);
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
-
-    float scale_x = 1.0f, scale_y = 1.0f, scale_z = 1.0f;
-    float axis_x = 0.0f, axis_y = 0.0f, axis_z = 0.0f;
-    float theta = 45;
+    float theta = 180;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
