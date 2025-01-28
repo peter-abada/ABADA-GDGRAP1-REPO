@@ -54,7 +54,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                rotate_x -= 1.0f;
+                rotate_x -= 3.0f;
                 axis_y = 1;
                 axis_x = 0;
                 break;
@@ -64,7 +64,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                rotate_x += 1.0f;
+                rotate_x += 3.0f;
                 axis_y = 1;
                 axis_x = 0;
                 break;
@@ -74,7 +74,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                rotate_y += 1.0f;
+                rotate_y += 3.0f;
                 axis_y = 0;
                 axis_x = 1;
                 break;
@@ -84,7 +84,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                rotate_y -= 1.0f;
+                rotate_y -= 3.0f;
                 axis_y = 0;
                 axis_x = 1;
                 break;
