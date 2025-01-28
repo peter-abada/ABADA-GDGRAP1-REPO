@@ -14,6 +14,7 @@
 float x = 0.0f, y = 0.0f, z = 0.0f;
 float scale_x = 1, scale_y = 1, scale_z = 1;
 float axis_x = 0, axis_y = 1, axis_z = 0;
+float rotate_x = 0, rotate_y = 0;
 
 static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     switch (key) {
@@ -53,7 +54,9 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_x -= 0.1f;
+                rotate_x -= 1.0f;
+                axis_y = 1;
+                axis_x = 0;
                 break;
             }
             break;
@@ -61,7 +64,9 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_x += 0.1f;
+                rotate_x += 1.0f;
+                axis_y = 1;
+                axis_x = 0;
                 break;
             }
             break;
@@ -69,7 +74,9 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_y -= 0.1f;
+                rotate_y += 1.0f;
+                axis_y = 0;
+                axis_x = 1;
                 break;
             }
             break;
@@ -77,7 +84,9 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
             switch (action) {
             case GLFW_PRESS:
             case GLFW_REPEAT:
-                axis_y += 0.1f;
+                rotate_y -= 1.0f;
+                axis_y = 0;
+                axis_x = 1;
                 break;
             }
             break;
@@ -209,7 +218,6 @@ int main(void)
 
     glm::mat3 identity_matrix3 = glm::mat3(1.0f);
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
-    float theta = 180;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -219,7 +227,8 @@ int main(void)
         unsigned int transformLoc = glGetUniformLocation(shaderProg, "transform");
         glm::mat4 transformation_matrix = glm::translate(identity_matrix4, glm::vec3(x, y, z));
         transformation_matrix = glm::scale(transformation_matrix, glm::vec3(scale_x, scale_y, scale_z));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(theta), glm::normalize(glm::vec3(axis_x, axis_y, axis_z)));
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_y), glm::normalize(glm::vec3(1.0f, 0, 0)));
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_x), glm::normalize(glm::vec3(0, 1.0f, 0)));
         
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
 
