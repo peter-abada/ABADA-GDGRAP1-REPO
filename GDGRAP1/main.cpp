@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-float x = 0.0f, y = 0.0f, z = 0.0f;
+float x = 0.5f, y = 0.0f, z = 0.0f;
 float scale_x = 1, scale_y = 1, scale_z = 1;
 float axis_x = 0, axis_y = 1, axis_z = 0;
 float rotate_x = 0, rotate_y = 0;
@@ -116,7 +116,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main(void)
 {
-    float height = 640.0f, width = 640.0f;
+    int height = 600, width = 600;
 
     GLFWwindow* window;
 
@@ -136,7 +136,7 @@ int main(void)
     glfwMakeContextCurrent(window);
     gladLoadGL();
 
-    //glViewport(0, 0, 1200, 600);
+    //glViewport(0, 0, 1200, 1200);
 
     glfwSetKeyCallback(window, Key_Callback);
 
@@ -227,9 +227,9 @@ int main(void)
     //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
     //Perspective
-    glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
+    //glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
 
-    
+    float rotate_z = 0;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -238,48 +238,49 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         //Camera position / eye
-        glm::vec3 cameraPos = glm::vec3(0, 0, 5.0f);
-        glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
+        //glm::vec3 cameraPos = glm::vec3(0, 0, 5.0f);
+        //glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
 
-        glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
-        glm::vec3 Center = glm::vec3(0, 3.0f, 0); // On top of the rabbit
-        
-        glm::vec3 Forward = Center - cameraPos;
-        Forward = glm::normalize(Forward);
+        //glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
+        //glm::vec3 Center = glm::vec3(0, 3.0f, 0); // On top of the rabbit
+        //
+        //glm::vec3 Forward = Center - cameraPos;
+        //Forward = glm::normalize(Forward);
 
-        glm::vec3 Right = glm::normalize(glm::cross(Forward, WorldUp));
-        glm::vec3 Up = glm::normalize(glm::cross(Right, Forward));
+        //glm::vec3 Right = glm::normalize(glm::cross(Forward, WorldUp));
+        //glm::vec3 Up = glm::normalize(glm::cross(Right, Forward));
 
-        glm::mat4 cameraOrientation = glm::mat4(1.0f);
+        //glm::mat4 cameraOrientation = glm::mat4(1.0f);
 
-        cameraOrientation[0][0] = Right.x;
-        cameraOrientation[1][0] = Right.y;
-        cameraOrientation[2][0] = Right.z;
+        //cameraOrientation[0][0] = Right.x;
+        //cameraOrientation[1][0] = Right.y;
+        //cameraOrientation[2][0] = Right.z;
 
-        cameraOrientation[0][1] = Up.x;
-        cameraOrientation[1][1] = Up.y;
-        cameraOrientation[2][1] = Up.z;
+        //cameraOrientation[0][1] = Up.x;
+        //cameraOrientation[1][1] = Up.y;
+        //cameraOrientation[2][1] = Up.z;
 
-        cameraOrientation[0][2] = -Forward.x;
-        cameraOrientation[1][2] = -Forward.y;
-        cameraOrientation[2][2] = -Forward.z;
+        //cameraOrientation[0][2] = -Forward.x;
+        //cameraOrientation[1][2] = -Forward.y;
+        //cameraOrientation[2][2] = -Forward.z;
 
-        glm::mat4 viewMatrix = cameraOrientation * cameraPosMatrix;
+        //glm::mat4 viewMatrix = cameraOrientation * cameraPosMatrix;
 
-        unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
+        //unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
+        //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
         unsigned int transformLoc = glGetUniformLocation(shaderProg, "transform");
-        glm::mat4 transformation_matrix = glm::translate(identity_matrix4, glm::vec3(x, y, z));
+        glm::mat4 transformation_matrix = glm::translate(identity_matrix4, glm::vec3(cos(rotate_z) * 0.7, sin(rotate_z) * 0.7, z));
         transformation_matrix = glm::scale(transformation_matrix, glm::vec3(scale_x, scale_y, scale_z));
         transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_y), glm::normalize(glm::vec3(1.0f, 0, 0)));
         transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_x), glm::normalize(glm::vec3(0, 1.0f, 0)));
-        
-        
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_z), glm::normalize(glm::vec3(0, 0, 1.0f)));
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
-
-        unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        /*unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));*/
+        
+        rotate_z += 0.05f;
+        if (rotate_z > 360)
+            rotate_z = 0;
 
         glUseProgram(shaderProg);
         glBindVertexArray(VAO);
@@ -288,7 +289,6 @@ int main(void)
                     mesh_indices.size(),
                     GL_UNSIGNED_INT,
                     0); 
-        
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
