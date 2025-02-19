@@ -207,6 +207,18 @@ int main(void)
         mesh_indices.push_back(shapes[0].mesh.indices[i].vertex_index);
     }
 
+    std::vector<GLfloat> fullVertexData;
+    for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
+        tinyobj::index_t vData = shapes[0].mesh.indices[i];
+
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3] + 1);
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3] + 2);
+
+        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2)]);
+        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2) + 1]);
+    }
+
     GLfloat vertices[]{
         -0.5f, -0.5f, 0,
         0, 0.5f, 0,
