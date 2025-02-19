@@ -213,8 +213,12 @@ int main(void)
 
         fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
         fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]); 
 
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+        
         fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2)]);
         fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2 + 1)]);
     }
@@ -256,11 +260,14 @@ int main(void)
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
 
-    GLintptr uvPtr = 3 * sizeof(GLfloat);
+    GLintptr normPtr = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)uvPtr);
+    GLintptr uvPtr = 6 * sizeof(GLfloat);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr);
 
 
     /*glBufferData(GL_ARRAY_BUFFER,
@@ -292,6 +299,7 @@ int main(void)
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);*/
 
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -366,7 +374,7 @@ int main(void)
                     GL_UNSIGNED_INT,
                     0); */
 
-        glDrawArrays(GL_TRIANGLES, 0, fullVertexData.size() / 5);
+        glDrawArrays(GL_TRIANGLES, 0, fullVertexData.size() / 8);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
