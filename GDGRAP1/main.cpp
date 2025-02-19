@@ -141,7 +141,7 @@ int main(void)
 
     int img_width, img_height, colorChannels;
 
-    unsigned char* tex_bytes = stbi_load("3D/ayaya.png", &img_width, &img_height, &colorChannels, 0);
+    unsigned char* tex_bytes = stbi_load("3D/partenza.jpg", &img_width, &img_height, &colorChannels, 0);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -150,11 +150,11 @@ int main(void)
 
     glTexImage2D(GL_TEXTURE_2D,
         0,
-        GL_RGBA,
+        GL_RGB,
         img_width,
         img_height,
         0,
-        GL_RGBA,
+        GL_RGB,
         GL_UNSIGNED_BYTE,
         tex_bytes);
 
@@ -315,6 +315,9 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
+    glm::vec3 lightPos = glm::vec3(-5, 3, 0);
+    glm::vec3 lightColor = glm::vec3(1, 1, 1);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -369,6 +372,11 @@ int main(void)
         glUseProgram(shaderProg);
         glBindVertexArray(VAO);
         
+        GLuint lightAddress = glGetUniformLocation(shaderProg, "lightPos");
+        glUniform3fv(lightAddress, 1, glm::value_ptr(lightPos));
+        GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
+        glUniform3fv(lightColorAddress, 1, glm::value_ptr(lightColor));
+
         /*glDrawElements(GL_TRIANGLES,
                     mesh_indices.size(),
                     GL_UNSIGNED_INT,
