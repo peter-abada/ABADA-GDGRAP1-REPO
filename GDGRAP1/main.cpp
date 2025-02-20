@@ -11,6 +11,37 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+/*
+
+TODO:
+
+1. CREATE A MODEL CLASS:
+    ATTRIBUTES:
+        Position (x, y, z)
+        Rotation (x, y, z)
+        Scale (x, y, z)
+
+    METHODS:
+        draw() - draws the object
+
+2. IMPLEMENT A CAMERA SYSTEM:
+    - Either mouse or arrow controls camera
+    - WASD to control movement
+    - SPACE spawns a 3D model in front of the player with 3 second cooldown
+        - Previously spawned models should persist
+
+3. OTHER SPECS:
+    - Use your own OBJ file (we can download one)
+    - The model class should store the position of each model object
+    - Use only one vertex and fragment shader
+    - Use perspective projection (See slides "05GDGRAP1-Projections") and related functions below)
+    - Models should spawn directly in front of the camera
+    - One model should be spawned on open
+    - Document code
+    - Credit 3D model source
+
+*/
+
 float x = 0.5f, y = 0.0f, z = 0.0f;
 float scale_x = 1, scale_y = 1, scale_z = 1;
 float axis_x = 0, axis_y = 1, axis_z = 0;
