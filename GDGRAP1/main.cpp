@@ -34,7 +34,8 @@ TODO:
     - Use your own OBJ file (we can download one)
     - The model class should store the position of each model object
     - Use only one vertex and fragment shader
-    - Use perspective projection (See slides "05GDGRAP1-Projections") and related functions below)
+    - Use perspective projection (See slides "05GDGRAP1-Projections")
+        - Related code can be found commented in main()
     - Models should spawn directly in front of the camera
     - One model should be spawned on open
     - Document code
@@ -42,6 +43,7 @@ TODO:
 
 */
 
+//These will be in the model class
 float x = 0.5f, y = 0.0f, z = 0.0f;
 float scale_x = 1, scale_y = 1, scale_z = 1;
 float axis_x = 0, axis_y = 1, axis_z = 0;
