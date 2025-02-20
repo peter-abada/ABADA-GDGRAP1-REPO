@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <ctime>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -15,7 +17,7 @@
 
 TODO:
 
-1. CREATE A MODEL CLASS:
+1. CREATE A MODEL CLASS                  -              SOMEWHAT FINISHED, FOR NOW IT JUST PUTS THEM RANDOMLY ON THE SCREEN:
     ATTRIBUTES:
         Position (x, y, z)
         Rotation (x, y, z)
@@ -41,114 +43,68 @@ TODO:
     - Document code
     - Credit 3D model source
 
+
+4. MAKE DRAW MODEL WORK WITH CAMERA PROBABLY IN LIKE THE KEY_CALLBACK FUNCTIONS
+
 */
 
-//These will be in the model class
-float x = 0.5f, y = 0.0f, z = 0.0f;
-float scale_x = 1, scale_y = 1, scale_z = 1;
-float axis_x = 0, axis_y = 1, axis_z = 0;
-float rotate_x = 0, rotate_y = 0;
+
+
+class Model {
+private:
+
+    glm::vec3 position;
+    glm::vec3 rotation;
+    glm::vec3 scale;
+
+public:
+
+    Model(glm::vec3 pos) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f) {}
+
+    void draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices) {
+        glm::mat4 identity_matrix4 = glm::mat4(1.0f);
+        glm::mat4 transformation_matrix = glm::translate(identity_matrix4, position);
+        transformation_matrix = glm::scale(transformation_matrix, scale);
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.x), glm::vec3(1.0f, 0, 0));
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.y), glm::vec3(0, 1.0f, 0));
+        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.z), glm::vec3(0, 0, 1.0f));
+
+        unsigned int transformLoc = glGetUniformLocation(shaderProg, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
+
+        glUseProgram(shaderProg);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, mesh_indices.size(), GL_UNSIGNED_INT, 0);
+    }
+
+    // Not needed but like why not lol
+    glm::vec3 getPosition() { return position; }
+    void setPosition(glm::vec3& pos) { position = pos; }
+
+    glm::vec3 getRotation() { return rotation; }
+    void setRotation(glm::vec3& rot) { rotation = rot; }
+
+    glm::vec3 getScale() { return scale; }
+    void setScale(glm::vec3& scl) { scale = scl; }
+};
+
+std::vector<Model> models;
 
 static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    switch (key) {
-        case GLFW_KEY_D:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    x += 0.01f;
-                    break;
-            }
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        switch (key) {
+        case GLFW_KEY_SPACE:
+            float randX = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
+            float randY = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
+            models.push_back(Model(glm::vec3(randX, randY, 0.0f)));
             break;
-        case GLFW_KEY_A:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    x -= 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_W:
-            switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    y += 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_S:
-                switch (action) {
-                case GLFW_PRESS:
-                case GLFW_REPEAT:
-                    y -= 0.01f;
-                    break;
-            }
-            break;
-        case GLFW_KEY_LEFT:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                rotate_x -= 3.0f;
-                axis_y = 1;
-                axis_x = 0;
-                break;
-            }
-            break;
-        case GLFW_KEY_RIGHT:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                rotate_x += 3.0f;
-                axis_y = 1;
-                axis_x = 0;
-                break;
-            }
-            break;
-        case GLFW_KEY_DOWN:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                rotate_y += 3.0f;
-                axis_y = 0;
-                axis_x = 1;
-                break;
-            }
-            break;
-        case GLFW_KEY_UP:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                rotate_y -= 3.0f;
-                axis_y = 0;
-                axis_x = 1;
-                break;
-            }
-            break;
-        case GLFW_KEY_E:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                scale_x += 0.01f;
-                scale_y += 0.01f;
-                scale_z += 0.01f;
-                break;
-            }
-            break;
-        case GLFW_KEY_Q:
-            switch (action) {
-            case GLFW_PRESS:
-            case GLFW_REPEAT:
-                scale_x -= 0.01f;
-                scale_y -= 0.01f;
-                scale_z -= 0.01f;
-                break;
-            }
-            break;
+        }
     }
-    
 }
 
-int main(void)
-{
+int main(void) {
+    srand(static_cast<unsigned int>(time(0)));
+
     int height = 600, width = 600;
 
     GLFWwindow* window;
@@ -159,8 +115,7 @@ int main(void)
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(width, height, "Peter Abada", NULL, NULL);
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         return -1;
     }
@@ -200,7 +155,6 @@ int main(void)
 
     glLinkProgram(shaderProg);
 
-
     std::string path = "3D/bunny.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
@@ -218,7 +172,7 @@ int main(void)
     GLfloat vertices[]{
         -0.5f, -0.5f, 0,
         0, 0.5f, 0,
-        0.5f, -0.5f, 0 
+        0.5f, -0.5f, 0
     };
 
     GLuint indices[] = {
@@ -236,16 +190,16 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glBufferData(GL_ARRAY_BUFFER,
-                            sizeof(GLfloat) * attributes.vertices.size(),
-                            &attributes.vertices[0],
-                            GL_STATIC_DRAW);
+        sizeof(GLfloat) * attributes.vertices.size(),
+        &attributes.vertices[0],
+        GL_STATIC_DRAW);
 
     glVertexAttribPointer(0,
-                            3,
-                            GL_FLOAT,
-                            GL_FALSE,
-                            3 * sizeof(GLfloat),
-                            (void*)0);
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        3 * sizeof(GLfloat),
+        (void*)0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
@@ -253,23 +207,19 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    glm::mat3 identity_matrix3 = glm::mat3(1.0f);
-    glm::mat4 identity_matrix4 = glm::mat4(1.0f);
-
     //Projection matrix
     //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
     //Perspective
     //glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
 
-    float rotate_z = 0;
+    // Initialize the first model
+    models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f)));
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
-
         //Camera position / eye
         //glm::vec3 cameraPos = glm::vec3(0, 0, 5.0f);
         //glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
@@ -301,27 +251,13 @@ int main(void)
 
         //unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
         //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-        unsigned int transformLoc = glGetUniformLocation(shaderProg, "transform");
-        glm::mat4 transformation_matrix = glm::translate(identity_matrix4, glm::vec3(cos(rotate_z) * 0.7, sin(rotate_z) * 0.7, z));
-        transformation_matrix = glm::scale(transformation_matrix, glm::vec3(scale_x, scale_y, scale_z));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_y), glm::normalize(glm::vec3(1.0f, 0, 0)));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_x), glm::normalize(glm::vec3(0, 1.0f, 0)));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotate_z), glm::normalize(glm::vec3(0, 0, 1.0f)));
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
+
         /*unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));*/
-        
-        rotate_z += 0.05f;
-        if (rotate_z > 360)
-            rotate_z = 0;
+        for (Model& model : models) {
+            model.draw(shaderProg, VAO, mesh_indices);
+        }
 
-        glUseProgram(shaderProg);
-        glBindVertexArray(VAO);
-        
-        glDrawElements(GL_TRIANGLES,
-                    mesh_indices.size(),
-                    GL_UNSIGNED_INT,
-                    0); 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
