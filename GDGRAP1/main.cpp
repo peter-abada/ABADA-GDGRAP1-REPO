@@ -90,13 +90,29 @@ public:
 
 std::vector<Model> models;
 
+float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 5.0f;
+
 static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {
         case GLFW_KEY_SPACE:
+            {
             float randX = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
             float randY = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
             models.push_back(Model(glm::vec3(randX, randY, 0.0f)));
+            break;
+            }
+        case GLFW_KEY_W:
+            cameraX += 0.1f;
+            break;
+        case GLFW_KEY_S:
+            cameraX -= 0.1f;
+            break;
+        case GLFW_KEY_A:
+            cameraY -= 0.1f;
+            break;
+        case GLFW_KEY_D:
+            cameraY += 0.1f;
             break;
         }
     }
@@ -221,7 +237,7 @@ int main(void) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
         //Camera position / eye
-        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+        glm::vec3 cameraPos = glm::vec3(cameraX, cameraY, cameraZ);
         glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
 
         glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
