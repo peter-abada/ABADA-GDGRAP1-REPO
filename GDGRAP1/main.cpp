@@ -105,7 +105,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
 int main(void) {
     srand(static_cast<unsigned int>(time(0)));
 
-    int height = 600, width = 600;
+    float height = 600, width = 600;
 
     GLFWwindow* window;
 
@@ -114,7 +114,7 @@ int main(void) {
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(width, height, "Peter Abada", NULL, NULL);
+    window = glfwCreateWindow(width, height, "GDGRAP-1 PC01", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -211,7 +211,7 @@ int main(void) {
     //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
     //Perspective
-    //glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
 
     // Initialize the first model
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f)));
@@ -221,39 +221,39 @@ int main(void) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
         //Camera position / eye
-        //glm::vec3 cameraPos = glm::vec3(0, 0, 5.0f);
-        //glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
+        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+        glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
 
-        //glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
-        //glm::vec3 Center = glm::vec3(0, 3.0f, 0); // On top of the rabbit
-        //
-        //glm::vec3 Forward = Center - cameraPos;
-        //Forward = glm::normalize(Forward);
+        glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
+        glm::vec3 Center = glm::vec3(0, 3.0f, 0); // On top of the rabbit
+        
+        glm::vec3 Forward = Center - cameraPos;
+        Forward = glm::normalize(Forward);
 
-        //glm::vec3 Right = glm::normalize(glm::cross(Forward, WorldUp));
-        //glm::vec3 Up = glm::normalize(glm::cross(Right, Forward));
+        glm::vec3 Right = glm::normalize(glm::cross(Forward, WorldUp));
+        glm::vec3 Up = glm::normalize(glm::cross(Right, Forward));
 
-        //glm::mat4 cameraOrientation = glm::mat4(1.0f);
+        glm::mat4 cameraOrientation = glm::mat4(1.0f);
 
-        //cameraOrientation[0][0] = Right.x;
-        //cameraOrientation[1][0] = Right.y;
-        //cameraOrientation[2][0] = Right.z;
+        cameraOrientation[0][0] = Right.x;
+        cameraOrientation[1][0] = Right.y;
+        cameraOrientation[2][0] = Right.z;
 
-        //cameraOrientation[0][1] = Up.x;
-        //cameraOrientation[1][1] = Up.y;
-        //cameraOrientation[2][1] = Up.z;
+        cameraOrientation[0][1] = Up.x;
+        cameraOrientation[1][1] = Up.y;
+        cameraOrientation[2][1] = Up.z;
 
-        //cameraOrientation[0][2] = -Forward.x;
-        //cameraOrientation[1][2] = -Forward.y;
-        //cameraOrientation[2][2] = -Forward.z;
+        cameraOrientation[0][2] = -Forward.x;
+        cameraOrientation[1][2] = -Forward.y;
+        cameraOrientation[2][2] = -Forward.z;
 
-        //glm::mat4 viewMatrix = cameraOrientation * cameraPosMatrix;
+        glm::mat4 viewMatrix = cameraOrientation * cameraPosMatrix;
 
-        //unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
-        //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+        unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        /*unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));*/
+        unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
         for (Model& model : models) {
             model.draw(shaderProg, VAO, mesh_indices);
         }
