@@ -17,7 +17,7 @@
 
 TODO:
 
-1. CREATE A MODEL CLASS                  -              SOMEWHAT FINISHED, FOR NOW IT JUST PUTS THEM RANDOMLY ON THE SCREEN:
+1. CREATE A MODEL CLASS:                DONE
     ATTRIBUTES:
         Position (x, y, z)
         Rotation (x, y, z)
@@ -26,7 +26,7 @@ TODO:
     METHODS:
         draw() - draws the object
 
-2. IMPLEMENT A CAMERA SYSTEM:
+2. IMPLEMENT A CAMERA SYSTEM:                           HALF DONE - NEEDS A WAY TO MAKE WASD MOVEMENT MORE SMOOTH
     - Either mouse or arrow controls camera
     - WASD to control movement
     - SPACE spawns a 3D model in front of the player with 3 second cooldown
@@ -43,8 +43,6 @@ TODO:
     - Document code
     - Credit 3D model source
 
-
-4. MAKE DRAW MODEL WORK WITH CAMERA PROBABLY IN LIKE THE KEY_CALLBACK FUNCTIONS
 
 */
 
@@ -90,36 +88,80 @@ public:
 
 std::vector<Model> models;
 
-float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 5.0f;
+float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 2.0f;
+float cameraSpeed = 0.1f;
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float yaw = -90.0f; 
+float pitch = 0.0f;
+float lastX = 300.f, lastY = 300.f;
+bool initialMouse = true;
 
-static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
+
+	if (initialMouse) { // fixes the mouse going crazy at the start
+		lastX = xpos;
+		lastY = ypos;
+		initialMouse = false;
+	}
+
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; 
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+
+}
+
+void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        glm::vec3 cameraPos = glm::vec3(cameraX, cameraY, cameraZ);
+        glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp)); // for right and leftr movement
+        
         switch (key) {
         case GLFW_KEY_SPACE:
-            {
-            float randX = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
-            float randY = float(rand()) / float(RAND_MAX) * 2.0f - 1.0f;
-            models.push_back(Model(glm::vec3(randX, randY, 0.0f)));
+            models.push_back(Model(cameraPos + cameraFront)); // Spawn in front of the camera
             break;
-            }
         case GLFW_KEY_W:
-            cameraX += 0.1f;
+            cameraX += cameraSpeed * cameraFront.x;
+            cameraZ += cameraSpeed * cameraFront.z;
             break;
         case GLFW_KEY_S:
-            cameraX -= 0.1f;
+            cameraX -= cameraSpeed * cameraFront.x;
+            cameraZ -= cameraSpeed * cameraFront.z;
             break;
         case GLFW_KEY_A:
-            cameraY -= 0.1f;
+            cameraX -= cameraSpeed * cameraRight.x;
+            cameraZ -= cameraSpeed * cameraRight.z;
             break;
         case GLFW_KEY_D:
-            cameraY += 0.1f;
+            cameraX += cameraSpeed * cameraRight.x;
+            cameraZ += cameraSpeed * cameraRight.z;
             break;
         }
     }
 }
 
 int main(void) {
-    srand(static_cast<unsigned int>(time(0)));
 
     float height = 600, width = 600;
 
@@ -143,6 +185,8 @@ int main(void) {
     //glViewport(0, 0, 1200, 1200);
 
     glfwSetKeyCallback(window, Key_Callback);
+    glfwSetCursorPosCallback(window, Mouse_Callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
 
     std::fstream vertSrc("Shaders/sample.vert");
     std::stringstream vertBuff;
@@ -241,11 +285,9 @@ int main(void) {
         glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
 
         glm::vec3 WorldUp = glm::normalize(glm::vec3(0, 1.0f, 0)); // Pointing up
-        glm::vec3 Center = glm::vec3(0, 3.0f, 0); // On top of the rabbit
-        
-        glm::vec3 Forward = Center - cameraPos;
-        Forward = glm::normalize(Forward);
+        glm::vec3 Center = cameraPos + cameraFront; // Camera is looking towards the front
 
+        glm::vec3 Forward = glm::normalize(Center - cameraPos);
         glm::vec3 Right = glm::normalize(glm::cross(Forward, WorldUp));
         glm::vec3 Up = glm::normalize(glm::cross(Right, Forward));
 
