@@ -32,7 +32,7 @@ TODO:
     - SPACE spawns a 3D model in front of the player with 3 second cooldown
         - Previously spawned models should persist
 
-3. OTHER SPECS:
+3. OTHER SPECS: - Mostly fulfilled; may need more documentation
     - Use your own OBJ file (we can download one)
     - The model class should store the position of each model object
     - Use only one vertex and fragment shader
@@ -47,7 +47,13 @@ TODO:
 */
 
 
+/*
 
+MODEL CREDIT:
+"Low Poly Rat" by snippysnappets
+Acquired from https://free3d.com/3d-model/low-poly-rat-3205.html
+
+*/
 class Model {
 private:
 
@@ -57,8 +63,21 @@ private:
 
 public:
 
-    Model(glm::vec3 pos) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f) {}
+    /*
+    
+    Model class constructor;
+    Creates a model at any given position with the specified attributes
 
+    */
+    Model(glm::vec3 pos) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.01f, 0.01f, 0.01f) {}
+
+    /*
+    
+    Drawing 3D models is now a method of the Model class
+    Similar to previously discussed implementation;
+    Draws the model by applying transformation matrices and draws from the VAO data
+
+    */
     void draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices) {
         glm::mat4 identity_matrix4 = glm::mat4(1.0f);
         glm::mat4 transformation_matrix = glm::translate(identity_matrix4, position);
@@ -86,6 +105,7 @@ public:
     void setScale(glm::vec3& scl) { scale = scl; }
 };
 
+//Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
 
 float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 2.0f;
@@ -98,6 +118,34 @@ float lastX = 300.f, lastY = 300.f;
 bool initialMouse = true;
 
 
+/*
+
+The worst fucking implementation of a cooldown timer I have ever done,
+I'm not even sure if this is allowed tbh (can only use libraries discussed in class according to the specs and ctime isnt one of them)
+At the same time I'm not aware of any other ways to track time in OpenGL that have been discussed, even in PROG3
+
+Note that the clock() in clock_t ALWAYS GOES UP, and cannot be reset
+
+Two global clock_t variables, one that tracks how much time has passed and a cooldown period
+The function checks if the time elapsed is greater than the cooldown (3 seconds * how many times 3 seconds have passed)
+If true, set canSpawn to true (let an object be spawned) and add 3 seconds the cooldown
+
+*/
+
+clock_t start = clock();
+clock_t cooldown = 3 * CLOCKS_PER_SEC;
+bool canSpawn = false;
+
+void spawnCooldown(clock_t start, clock_t& cooldown) {
+
+    clock_t elapse = clock() - start;
+    if (elapse > cooldown) {
+        cooldown += 3 * CLOCKS_PER_SEC;
+        canSpawn = true;
+    }
+}
+
+//Mouse callback for camera control using mouse
 void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
 
 	if (initialMouse) { // fixes the mouse going crazy at the start
@@ -132,14 +180,20 @@ void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
 
 }
 
+//Key callback for moving the camera and spawning models using the keyboard
 void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         glm::vec3 cameraPos = glm::vec3(cameraX, cameraY, cameraZ);
         glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp)); // for right and leftr movement
-        
+
         switch (key) {
+        //Spawns a new model by pushing a new Model object to the models vector
         case GLFW_KEY_SPACE:
-            models.push_back(Model(cameraPos + cameraFront)); // Spawn in front of the camera
+            spawnCooldown(start, cooldown);
+            if(canSpawn){
+                models.push_back(Model(cameraPos + cameraFront)); // Spawn in front of the camera
+                canSpawn = false;
+            }
             break;
         case GLFW_KEY_W:
             cameraX += cameraSpeed * cameraFront.x;
@@ -215,7 +269,7 @@ int main(void) {
 
     glLinkProgram(shaderProg);
 
-    std::string path = "3D/bunny.obj";
+    std::string path = "3D/rat.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
     std::string warning, error;
@@ -267,14 +321,13 @@ int main(void) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    //Projection matrix
-    //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-
-    //Perspective
+    //Perspective matrix
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
 
     // Initialize the first model
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f)));
+
+    
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
@@ -312,10 +365,10 @@ int main(void) {
 
         unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+        
         for (Model& model : models) {
             model.draw(shaderProg, VAO, mesh_indices);
         }
-
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
