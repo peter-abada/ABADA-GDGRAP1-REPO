@@ -315,8 +315,14 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
-    glm::vec3 lightPos = glm::vec3(-5, 3, 0);
+    glm::vec3 lightPos = glm::vec3(-10, 3, 0);
     glm::vec3 lightColor = glm::vec3(1, 1, 1);
+
+    float ambientStr = 0.1f;
+    glm::vec3 ambientColor = lightColor;
+
+    float specStr = 0.5f;
+    float specPhong = 25.0f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -376,6 +382,18 @@ int main(void)
         glUniform3fv(lightAddress, 1, glm::value_ptr(lightPos));
         GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
         glUniform3fv(lightColorAddress, 1, glm::value_ptr(lightColor));
+
+        GLuint ambientStrAddress = glGetUniformLocation(shaderProg, "ambientStr");
+        glUniform1f(ambientStrAddress, ambientStr);
+        GLuint ambientColorAddress = glGetUniformLocation(shaderProg, "ambientColor");
+        glUniform3fv(ambientColorAddress, 1, glm::value_ptr(ambientColor));
+
+        GLuint cameraPosAddress = glGetUniformLocation(shaderProg, "cameraPos");
+        glUniform3fv(cameraPosAddress, 1, glm::value_ptr(cameraPos));
+        GLuint specStrAddress = glGetUniformLocation(shaderProg, "specStr");
+        glUniform1f(specStrAddress, specStr);
+        GLuint specPhongAddress = glGetUniformLocation(shaderProg, "specPhong");
+        glUniform1f(specPhongAddress, specPhong);
 
         /*glDrawElements(GL_TRIANGLES,
                     mesh_indices.size(),
