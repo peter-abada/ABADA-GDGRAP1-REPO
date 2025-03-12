@@ -324,6 +324,8 @@ int main(void)
     float specStr = 0.5f;
     float specPhong = 25.0f;
 
+    float brightness = 100.0f;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -394,6 +396,9 @@ int main(void)
         glUniform1f(specStrAddress, specStr);
         GLuint specPhongAddress = glGetUniformLocation(shaderProg, "specPhong");
         glUniform1f(specPhongAddress, specPhong);
+
+        GLuint brightnessAddress = glGetUniformLocation(shaderProg, "brightness");
+        glUniform1f(brightnessAddress, brightness);
 
         /*glDrawElements(GL_TRIANGLES,
                     mesh_indices.size(),

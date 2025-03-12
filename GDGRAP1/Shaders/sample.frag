@@ -24,9 +24,14 @@ uniform float specStr;
 
 uniform float specPhong;
 
-void main(){
-	//FragColor = vec4(0.7f, 0.0f, 0.0f, 1.0f);
+//Brightness parameter
+uniform float brightness;
 
+//Point light
+
+void main(){
+
+	//Diffuse
 	vec3 normal = normalize(normCoord);
 
 	vec3 lightDir = normalize(lightPos - fragPos);
@@ -35,16 +40,24 @@ void main(){
 
 	vec3 diffuse = diff * lightColor;
 
+	//Ambient
 	vec3 ambientCol = ambientColor * ambientStr;
 
 	vec3 viewDir = normalize(cameraPos - fragPos);
 
+	//Specular
 	vec3 reflectDir = reflect(-lightDir, normal);
 
 	float spec = pow(max(dot(reflectDir, viewDir), 0.1), specPhong);
 
-	vec3 specColor = spec * specStr * lightColor;
+	vec3 specColor = spec * specStr * vec3(0, 1, 0);
 
-	FragColor = vec4(specColor + diffuse + ambientCol, 1.0) * texture(tex0, texCoord);
+	//Get distance and attenuation
+	float distance = length(lightPos - fragPos);
+	//Formula of light intensity via inverse law
+	float atten = 1.0 / (distance * distance);
+
+	//Include brightness and attenuation in lighting calculation
+	FragColor = vec4((ambientCol + specColor + diffuse) * atten * brightness, 1.0) * texture(tex0, texCoord);
 
 }
