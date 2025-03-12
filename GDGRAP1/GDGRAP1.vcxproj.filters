@@ -34,4 +34,10 @@
     <CopyFileToFolders Include="Shaders\sample.frag" />
     <CopyFileToFolders Include="Shaders\sample.vert" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Shaders\skybox.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\skybox.frag" />
+  </ItemGroup>
 </Project>

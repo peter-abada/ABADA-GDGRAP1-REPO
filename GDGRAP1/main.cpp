@@ -192,6 +192,36 @@ int main(void)
 
     glLinkProgram(shaderProg);
 
+    ///////////////////////////////////////////////////////////
+
+    std::fstream sky_vertSrc("Shaders/skybox.vert");
+    std::stringstream sky_vertBuff;
+    sky_vertBuff << sky_vertSrc.rdbuf();
+
+    std::string sky_vertS = sky_vertBuff.str();
+    const char* sky_v = sky_vertS.c_str();
+
+    std::fstream sky_fragSrc("Shaders/skybox.frag");
+    std::stringstream sky_fragBuff;
+    sky_fragBuff << sky_fragSrc.rdbuf();
+    std::string sky_fragS = sky_fragBuff.str();
+    const char* sky_f = sky_fragS.c_str();
+
+    GLuint sky_vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(sky_vertexShader, 1, &v, NULL);
+    glCompileShader(sky_vertexShader);
+
+    GLuint sky_fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(sky_fragShader, 1, &f, NULL);
+    glCompileShader(sky_fragShader);
+
+    GLuint sky_shaderProg = glCreateProgram();
+    glAttachShader(sky_shaderProg, sky_vertexShader);
+    glAttachShader(sky_shaderProg, sky_fragShader);
+
+    glLinkProgram(sky_shaderProg);
+
+    ///////////////////////////////////////////////////////////
 
     std::string path = "3D/djSword.obj";
     std::vector<tinyobj::shape_t> shapes;
