@@ -31,6 +31,12 @@ uniform float brightness;
 
 void main(){
 
+	vec4 pixelColor = texture(tex0, texCoord);
+
+	if(pixelColor.a < 0.1){
+		discard;
+	}
+
 	//Diffuse
 	vec3 normal = normalize(normCoord);
 

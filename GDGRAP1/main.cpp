@@ -117,7 +117,7 @@ static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-GLuint loadShader(std::string vert, std::string frag) {
+static GLuint loadShader(std::string vert, std::string frag) {
 
     std::fstream vertSrc(vert);
     std::stringstream vertBuff;
@@ -171,7 +171,7 @@ int main(void)
 
     int img_width, img_height, colorChannels;
 
-    unsigned char* tex_bytes = stbi_load("3D/partenza.jpg", &img_width, &img_height, &colorChannels, 0);
+    unsigned char* tex_bytes = stbi_load("12Mats/gradient.png", &img_width, &img_height, &colorChannels, 0);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -180,11 +180,11 @@ int main(void)
 
     glTexImage2D(GL_TEXTURE_2D,
         0,
-        GL_RGB,
+        GL_RGBA,
         img_width,
         img_height,
         0,
-        GL_RGB,
+        GL_RGBA,
         GL_UNSIGNED_BYTE,
         tex_bytes);
 
@@ -362,7 +362,7 @@ int main(void)
     }
     stbi_set_flip_vertically_on_load(true);
 
-    std::string path = "3D/djSword.obj";
+    std::string path = "12Mats/plane.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
     std::string warning, error;
@@ -484,7 +484,7 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
-    glm::vec3 lightPos = glm::vec3(-10, 3, 0);
+    glm::vec3 lightPos = glm::vec3(0, 0, -5);
     glm::vec3 lightColor = glm::vec3(1, 1, 1);
 
     float ambientStr = 0.1f;
@@ -494,6 +494,9 @@ int main(void)
     float specPhong = 25.0f;
 
     float brightness = 100.0f;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
