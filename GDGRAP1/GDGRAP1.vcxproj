@@ -139,10 +139,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DirLight.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="OrthoCamera.cpp" />
+    <ClCompile Include="PersCamera.cpp" />
+    <ClCompile Include="PointLight.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.hpp" />
+    <ClInclude Include="DirLight.hpp" />
+    <ClInclude Include="Light.hpp" />
+    <ClInclude Include="Model.hpp" />
+    <ClInclude Include="OrthoCamera.hpp" />
+    <ClInclude Include="PersCamera.hpp" />
+    <ClInclude Include="PointLight.hpp" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1,75 +1,38 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <ctime>
-
+//
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "Model.hpp"
+#include "OrthoCamera.hpp"
+#include "PersCamera.hpp"
+#include "DirLight.hpp"
 
 /*
-
-MODEL CREDIT:
-"Low Poly Rat" by snippysnappets
-Acquired from https://free3d.com/3d-model/low-poly-rat-3205.html
-
+ * PC02:
+ *
+ *TODO:
+ * - Create base class "Camera" to be inherited by classes "OrthoCamera" and "PerspectiveCamera"
+ * - Create base class "Light" to be inherited by classes "Dir(ection)Light" and "PointLight"
+ * 
+ * - Render two objects: one main object and one to represent a light source
+ * - Add a direction light at (4, -5, 0), the second object will serve as a point light
+ * - Main object should be textured and shaded and account for lighting
+ * - Main object rotation controlled by WS (X axis), AD (Y axis) and QE (Z axis)
+ * - Light object also controlled by WASDQE to rotate around main object
+ * - Press space to switch control between main object and light object
+ * - Control point light intensity using up and down and direction light intensity using left and right
+ * - Perspective camera rotating around main object controlled with mouse
+ * - Orthographic camera viewing both objects from the top
+ * - Switch between cameras using 1 and 2
+ * 
+ * - We'll need a new model
+ * 
+ * 
 */
-class Model {
-private:
-
-    glm::vec3 position;
-    glm::vec3 rotation;
-    glm::vec3 scale;
-
-public:
-
-    /*
-    
-    Model class constructor;
-    Creates a model at any given position with the specified attributes
-
-    */
-    Model(glm::vec3 pos) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.01f, 0.01f, 0.01f) {}
-
-    /*
-    
-    Drawing 3D models is now a method of the Model class
-    Similar to previously discussed implementation;
-    Draws the model by applying transformation matrices and draws from the VAO data
-
-    */
-    void draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices) {
-        glm::mat4 identity_matrix4 = glm::mat4(1.0f);
-        glm::mat4 transformation_matrix = glm::translate(identity_matrix4, position);
-        transformation_matrix = glm::scale(transformation_matrix, scale);
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.x), glm::vec3(1.0f, 0, 0));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.y), glm::vec3(0, 1.0f, 0));
-        transformation_matrix = glm::rotate(transformation_matrix, glm::radians(rotation.z), glm::vec3(0, 0, 1.0f));
-
-        unsigned int transformLoc = glGetUniformLocation(shaderProg, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformation_matrix));
-
-        glUseProgram(shaderProg);
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, mesh_indices.size(), GL_UNSIGNED_INT, 0);
-    }
-
-    // Not needed but like why not lol
-    glm::vec3 getPosition() { return position; }
-    void setPosition(glm::vec3& pos) { position = pos; }
-
-    glm::vec3 getRotation() { return rotation; }
-    void setRotation(glm::vec3& rot) { rotation = rot; }
-
-    glm::vec3 getScale() { return scale; }
-    void setScale(glm::vec3& scl) { scale = scl; }
-};
 
 //Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
@@ -181,33 +144,15 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-int main(void) {
+/*
 
-    float height = 600, width = 600;
+Function to load shaders from a file path
+Parameters are the file paths for the shaders as strings
+Returns the final shader program
+Load the shader program in main()
 
-    GLFWwindow* window;
-
-    /* Initialize the library */
-    if (!glfwInit())
-        return -1;
-
-    /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(width, height, "GDGRAP-1 PC01", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
-        return -1;
-    }
-
-    /* Make the window's context current */
-    glfwMakeContextCurrent(window);
-    gladLoadGL();
-
-    //glViewport(0, 0, 1200, 1200);
-
-    glfwSetKeyCallback(window, Key_Callback);
-    glfwSetCursorPosCallback(window, Mouse_Callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-
+*/
+GLuint loadShader(std::string vert, std::string frag) {
     std::fstream vertSrc("Shaders/sample.vert");
     std::stringstream vertBuff;
     vertBuff << vertSrc.rdbuf();
@@ -233,6 +178,38 @@ int main(void) {
     glAttachShader(shaderProg, vertexShader);
     glAttachShader(shaderProg, fragShader);
 
+    return shaderProg;
+}
+
+int main(void) {
+
+    float height = 600, width = 600;
+
+    GLFWwindow* window;
+
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
+
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(width, height, "GDGRAP-1 PC02", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
+
+    //glViewport(0, 0, 1200, 1200);
+
+    glfwSetKeyCallback(window, Key_Callback);
+    glfwSetCursorPosCallback(window, Mouse_Callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
+
+    //Load shaders then link the shader program
+    GLuint shaderProg = loadShader("Shaders/sample.vert", "Shaders/sample.frag");
     glLinkProgram(shaderProg);
 
     std::string path = "3D/rat.obj";
@@ -297,7 +274,7 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
-        //Camera position / eye
+        //Data below is likely to be part of camera class
         glm::vec3 cameraPos = glm::vec3(cameraX, cameraY, cameraZ);
         glm::mat4 cameraPosMatrix = glm::translate(glm::mat4(1.0f), cameraPos * -1.0f);
 
