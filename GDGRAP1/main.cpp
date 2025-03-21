@@ -9,6 +9,9 @@
 #include "PersCamera.hpp"
 #include "DirLight.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 /*
  * PC02:
  *
@@ -185,6 +188,35 @@ int main(void) {
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
 
+    GLfloat UV[]{
+        0.f, 1.f,
+        0.f, 0.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        0.f, 1.f,
+        0.f, 0.f
+    };
+
+    int imgWidth, imgHeight, colorChannels;
+
+    unsigned char* tex_bytes = stbi_load("3D/partenza.jpg", &imgWidth, &imgHeight, &colorChannels, 0);
+
+    GLuint texture;
+
+    glGenTextures(1, &texture);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(tex_bytes);
+
+    glEnable(GL_DEPTH_TEST);
+
     glfwSetKeyCallback(window, Key_Callback);
     glfwSetCursorPosCallback(window, Mouse_Callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -222,36 +254,88 @@ int main(void) {
         obj2_mesh_indices.push_back(obj2_shapes[0].mesh.indices[i].vertex_index);
     }
 
-    GLuint VAOs[2], VBOs[2], EBOs[2];
+    std::vector<GLfloat> fullVertexData;
+    for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
+        tinyobj::index_t vData = shapes[0].mesh.indices[i];
+
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
+        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
+        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+
+        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2)]);
+        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2 + 1)]);
+    }
+
+    GLuint VAOs[2], VBOs[2], EBOs[2], VBOS_UV[2];
 
     glGenVertexArrays(2, VAOs);
     glGenBuffers(2, VBOs);
-    glGenBuffers(2, EBOs);
+    //glGenBuffers(2, VBOS_UV);
+    //glGenBuffers(2, EBOs);
 
     // Setup for the first model
     glBindVertexArray(VAOs[0]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attributes.vertices.size(), &attributes.vertices[0], GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+
+    GLintptr normPtr1 = 3 * sizeof(GLfloat);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
+
+    GLintptr uvPtr1 = 6 * sizeof(GLfloat);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
+
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attributes.vertices.size(), &attributes.vertices[0], GL_STATIC_DRAW);
+
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[0]);
+    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
+    glEnableVertexAttribArray(2);
 
     // Setup for the second model 
     glBindVertexArray(VAOs[1]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_attributes.vertices.size(), &obj2_attributes.vertices[0], GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-    glEnableVertexAttribArray(0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+    
+    GLintptr normPtr2 = 3 * sizeof(GLfloat);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[1]);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr2);
+
+    GLintptr uvPtr2 = 6 * sizeof(GLfloat);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr2);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_attributes.vertices.size(), &obj2_attributes.vertices[0], GL_STATIC_DRAW);
+
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    //glEnableVertexAttribArray(0);
+
+    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * obj2_mesh_indices.size(), obj2_mesh_indices.data(), GL_STATIC_DRAW);
-
+    
+    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
+    glEnableVertexAttribArray(1);
+    //glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 
     // Perspective matrix
@@ -274,11 +358,15 @@ int main(void) {
         unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
+        glBindTexture(GL_TEXTURE_2D, texture);
+        GLuint tex0Address = glGetUniformLocation(shaderProg, "tex0");
+        glUniform1i(tex0Address, 0);
+
         // Draw the first model (rat)
-        models[0].draw(shaderProg, VAOs[0], mesh_indices);
+        models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
 
         // Draw the second model (bunny)
-        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices);
+        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, fullVertexData);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

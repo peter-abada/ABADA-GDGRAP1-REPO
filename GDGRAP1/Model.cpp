@@ -2,7 +2,7 @@
 
 Model::Model(glm::vec3 pos, int id) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.01f, 0.01f, 0.01f), id(id) {}
 
-void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices) {
+void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices, std::vector<GLfloat> vertData) {
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
 
     // Rotate around the origin
@@ -19,7 +19,8 @@ void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indice
 
     glUseProgram(shaderProg);
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, mesh_indices.size(), GL_UNSIGNED_INT, 0);
+    //glDrawElements(GL_TRIANGLES, mesh_indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, vertData.size() / 8);
 }
 
 glm::vec3 Model::getPosition() { return position; }

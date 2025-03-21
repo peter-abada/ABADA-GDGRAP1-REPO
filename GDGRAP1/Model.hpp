@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 class Model {
+private:
     glm::vec3 position;
     glm::vec3 rotation;
     glm::vec3 scale;
@@ -36,7 +37,7 @@ public:
 
     */
 
-    void draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices);
+    void draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices, std::vector<GLfloat> vertData);
     glm::vec3 getPosition();
     void setPosition(glm::vec3& pos);
     glm::vec3 getRotation();
