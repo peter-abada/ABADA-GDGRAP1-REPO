@@ -35,6 +35,7 @@
  *
 */
 
+
 // Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
 
@@ -49,11 +50,10 @@ float pitch = 0.0f;
 float lastX = 300.f, lastY = 300.f;
 bool initialMouse = true;
 bool leftMouseButtonPressed = false;
-int selectedModelId = 0; // Add a variable to track the selected model
+int selectedModelId = 0; // To check current model (debugging purposes) 
 
 // Mouse callback for camera control using mouse
 void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
-
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         leftMouseButtonPressed = true;
     }
@@ -235,6 +235,11 @@ int main(void) {
 
     bool success = tinyobj::LoadObj(&attributes, &shapes, &material, &warning, &error, path.c_str());
 
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
     std::vector<GLuint> mesh_indices;
     for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
         mesh_indices.push_back(shapes[0].mesh.indices[i].vertex_index);
@@ -249,93 +254,138 @@ int main(void) {
 
     success = tinyobj::LoadObj(&obj2_attributes, &obj2_shapes, &obj2_material, &warning, &error, obj2_path.c_str());
 
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
     std::vector<GLuint> obj2_mesh_indices;
     for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
         obj2_mesh_indices.push_back(obj2_shapes[0].mesh.indices[i].vertex_index);
     }
 
+
+
+// Some obj files dont have normal stuff so make sure the model has one to load textures properly
+
+    
     std::vector<GLfloat> fullVertexData;
     for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
         tinyobj::index_t vData = shapes[0].mesh.indices[i];
 
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+        if (vData.vertex_index * 3 + 2 < attributes.vertices.size()) {
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+        }
 
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+        if (vData.normal_index * 3 + 2 < attributes.normals.size() && vData.normal_index >= 0) {
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            fullVertexData.push_back(0.0f); // Default normal x
+            fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+            fullVertexData.push_back(0.0f); // Default normal z
+        }
 
-        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2)]);
-        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2 + 1)]);
+        if (vData.texcoord_index * 2 + 1 < attributes.texcoords.size() && vData.texcoord_index >= 0) {
+            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2]);
+            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2 + 1]);
+        }
+        else {
+            std::cerr << "Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+        }
     }
 
-    GLuint VAOs[2], VBOs[2], EBOs[2], VBOS_UV[2];
+    std::vector<GLfloat> obj2_fullVertexData;
+    for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
+        tinyobj::index_t vData = obj2_shapes[0].mesh.indices[i];
+
+        if (vData.vertex_index * 3 + 2 < obj2_attributes.vertices.size()) {
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3]);
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 1]);
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+        }
+
+        if (vData.normal_index * 3 + 2 < obj2_attributes.normals.size() && vData.normal_index >= 0) {
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3]);
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 1]);
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f); // Default normal x
+            obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+            obj2_fullVertexData.push_back(0.0f); // Default normal z
+        }
+
+        if (vData.texcoord_index * 2 + 1 < obj2_attributes.texcoords.size() && vData.texcoord_index >= 0) {
+            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2]);
+            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2 + 1]);
+        }
+        else {
+            std::cerr << "Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+        }
+    }
+
+    GLuint VAOs[2], VBOs[2];
 
     glGenVertexArrays(2, VAOs);
     glGenBuffers(2, VBOs);
-    //glGenBuffers(2, VBOS_UV);
-    //glGenBuffers(2, EBOs);
 
     // Setup for the first model
     glBindVertexArray(VAOs[0]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
-
-    GLintptr normPtr1 = 3 * sizeof(GLfloat);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
-
-    GLintptr uvPtr1 = 6 * sizeof(GLfloat);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
-
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attributes.vertices.size(), &attributes.vertices[0], GL_STATIC_DRAW);
-
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
 
-    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
+    GLintptr normPtr1 = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
+    glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
+    GLintptr uvPtr1 = 6 * sizeof(GLfloat);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
     glEnableVertexAttribArray(2);
 
     // Setup for the second model 
     glBindVertexArray(VAOs[1]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_fullVertexData.size(), obj2_fullVertexData.data(), GL_DYNAMIC_DRAW);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
-    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
-    
-    GLintptr normPtr2 = 3 * sizeof(GLfloat);
+    glEnableVertexAttribArray(0);
 
+    GLintptr normPtr2 = 3 * sizeof(GLfloat);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr2);
+    glEnableVertexAttribArray(1);
 
     GLintptr uvPtr2 = 6 * sizeof(GLfloat);
-
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr2);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_attributes.vertices.size(), &obj2_attributes.vertices[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
 
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * obj2_mesh_indices.size(), obj2_mesh_indices.data(), GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
-    glEnableVertexAttribArray(1);
-    //glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 
     // Perspective matrix
@@ -363,10 +413,12 @@ int main(void) {
         glUniform1i(tex0Address, 0);
 
         // Draw the first model (rat)
+        std::cout << "Drawing first model with " << fullVertexData.size() << " vertices." << std::endl;
         models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
 
         // Draw the second model (bunny)
-        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, fullVertexData);
+        std::cout << "Drawing second model with " << obj2_fullVertexData.size() << " vertices." << std::endl;
+        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -376,7 +428,6 @@ int main(void) {
     }
     glDeleteVertexArrays(2, VAOs);
     glDeleteBuffers(2, VBOs);
-    glDeleteBuffers(2, EBOs);
 
     glfwTerminate();
     return 0;
