@@ -7,7 +7,7 @@
 #include "Model.hpp"
 #include "OrthoCamera.hpp"
 #include "PersCamera.hpp"
-#include "DirLight.hpp"
+#include "Light.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -279,7 +279,7 @@ int main(void) {
             fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
         }
         else {
-            std::cerr << "Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            std::cerr << "[OBJ1] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
             fullVertexData.push_back(0.0f);
             fullVertexData.push_back(0.0f);
             fullVertexData.push_back(0.0f);
@@ -291,7 +291,7 @@ int main(void) {
             fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
         }
         else {
-            std::cerr << "Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
             fullVertexData.push_back(0.0f); // Default normal x
             fullVertexData.push_back(1.0f); // Default normal y (pointing up)
             fullVertexData.push_back(0.0f); // Default normal z
@@ -302,7 +302,7 @@ int main(void) {
             fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2 + 1]);
         }
         else {
-            std::cerr << "Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            std::cerr << "[OBJ1] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
             fullVertexData.push_back(0.0f);
             fullVertexData.push_back(0.0f);
         }
@@ -318,7 +318,7 @@ int main(void) {
             obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 2]);
         }
         else {
-            std::cerr << "Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            std::cerr << "[OBJ2] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
             obj2_fullVertexData.push_back(0.0f);
             obj2_fullVertexData.push_back(0.0f);
             obj2_fullVertexData.push_back(0.0f);
@@ -330,7 +330,7 @@ int main(void) {
             obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
         }
         else {
-            std::cerr << "Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
             obj2_fullVertexData.push_back(0.0f); // Default normal x
             obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
             obj2_fullVertexData.push_back(0.0f); // Default normal z
@@ -341,7 +341,7 @@ int main(void) {
             obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2 + 1]);
         }
         else {
-            std::cerr << "Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
             obj2_fullVertexData.push_back(0.0f);
             obj2_fullVertexData.push_back(0.0f);
         }
@@ -395,6 +395,8 @@ int main(void) {
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 0));
     models.push_back(Model(glm::vec3(2.0f, 0.0f, 0.0f), 1));
 
+    Light testLight(glm::vec3(4.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -411,6 +413,12 @@ int main(void) {
         glBindTexture(GL_TEXTURE_2D, texture);
         GLuint tex0Address = glGetUniformLocation(shaderProg, "tex0");
         glUniform1i(tex0Address, 0);
+
+        GLuint lightAddress = glGetUniformLocation(shaderProg, "lightPos");
+        glUniform3fv(lightAddress, 1, glm::value_ptr(testLight.getLightPos()));
+
+        GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
+        glUniform3fv(lightColorAddress, 1, glm::value_ptr(testLight.getLightColor()));
 
         // Draw the first model (rat)
         std::cout << "Drawing first model with " << fullVertexData.size() << " vertices." << std::endl;
