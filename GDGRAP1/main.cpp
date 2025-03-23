@@ -166,6 +166,32 @@ GLuint loadShader(std::string vert, std::string frag) {
     return shaderProg;
 }
 
+/*
+    Function to load textures from a file path
+    Parameter is the texture file path as a string
+    Returns the texture
+    Load the texture in main()
+*/
+GLuint loadTexture(std::string path) {
+    int imgWidth, imgHeight, colorChannels;
+
+	unsigned char* tex_bytes = stbi_load(path.c_str(), &imgWidth, &imgHeight, &colorChannels, 0);
+
+	GLuint texture;
+
+	glGenTextures(1, &texture);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	stbi_image_free(tex_bytes);
+
+	return texture;
+}
+
 int main(void) {
     float height = 600, width = 600;
 
@@ -200,21 +226,12 @@ int main(void) {
         0.f, 0.f
     };
 
-    int imgWidth, imgHeight, colorChannels;
+    //Table texture
+    GLuint texture = loadTexture("3D/tex/WoodSeemles.jpg");
 
-    unsigned char* tex_bytes = stbi_load("3D/partenza.jpg", &imgWidth, &imgHeight, &colorChannels, 0);
-
-    GLuint texture;
-
-    glGenTextures(1, &texture);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(tex_bytes);
+    //Earth texture
+    stbi_set_flip_vertically_on_load(true);
+    GLuint texture2 = loadTexture("3D/world5400x2700.jpg");
 
     glEnable(GL_DEPTH_TEST);
 
@@ -227,7 +244,12 @@ int main(void) {
     glLinkProgram(shaderProg);
 
     // Load the first model 
-    std::string path = "3D/rat.obj";
+    /*
+        MODEL CREDIT:
+        "Round Table" by ksalk3d
+        https://free3d.com/3d-model/round-table-928375.html
+    */
+    std::string path = "3D/roundtable.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
     std::string warning, error;
@@ -247,7 +269,12 @@ int main(void) {
     }
 
     // Load the second model 
-    std::string obj2_path = "3D/rat.obj";
+    /*
+        MODEL CREDIT:
+        "World - Earth" by 3dpixel_be
+        https://free3d.com/3d-model/world-16887.html
+    */
+    std::string obj2_path = "3D/world.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
 
@@ -436,10 +463,11 @@ int main(void) {
         GLuint pointLightQuadraticAddress = glGetUniformLocation(shaderProg, "pointLightQuadratic");
         glUniform1f(pointLightQuadraticAddress, pointLight.getQuadratic());
 
-        // Draw the first model (rat)
+        // Draw the first model ("table")
         models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
 
-        // Draw the second model (bunny)
+        // Draw the second model (earth)
+        glBindTexture(GL_TEXTURE_2D, texture2);
         models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */

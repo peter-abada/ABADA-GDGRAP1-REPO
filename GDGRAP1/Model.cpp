@@ -1,6 +1,6 @@
 #include "Model.hpp"
 
-Model::Model(glm::vec3 pos, int id) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.01f, 0.01f, 0.01f), id(id) {}
+Model::Model(glm::vec3 pos, int id) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.5f, 0.5f, 0.5f), id(id) {}
 
 void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices, std::vector<GLfloat> vertData) {
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
