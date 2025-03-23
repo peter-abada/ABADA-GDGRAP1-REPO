@@ -17,6 +17,10 @@ uniform vec3 lightColor;
 void main(){
 	//FragColor = vec4(0.7f, 0.0f, 0.0f, 1.0f);
 
+	// Ambient lighting
+	float ambientStrength = 0.1;
+	vec3 ambient = ambientStrength * lightColor;
+
 	vec3 normal = normalize(normCoord);
 
 	vec3 lightDir = normalize(lightPos - fragPos);
@@ -25,6 +29,7 @@ void main(){
 
 	vec3 diffuse = diff * lightColor;
 
-	FragColor = vec4(diffuse, 1.0) * texture(tex0, texCoord);
+	vec3 result = (ambient + diffuse) * texture(tex0, texCoord).rgb;
+	FragColor = vec4(result, 1.0);
 
 }
