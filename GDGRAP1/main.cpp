@@ -8,7 +8,8 @@
 #include "OrthoCamera.hpp"
 #include "PersCamera.hpp"
 #include "Light.hpp"
-
+#include "DirLight.hpp"
+#include "PointLight.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -291,7 +292,7 @@ int main(void) {
             fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
         }
         else {
-            std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            //std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
             fullVertexData.push_back(0.0f); // Default normal x
             fullVertexData.push_back(1.0f); // Default normal y (pointing up)
             fullVertexData.push_back(0.0f); // Default normal z
@@ -330,7 +331,7 @@ int main(void) {
             obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
         }
         else {
-            std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
             obj2_fullVertexData.push_back(0.0f); // Default normal x
             obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
             obj2_fullVertexData.push_back(0.0f); // Default normal z
@@ -391,17 +392,17 @@ int main(void) {
     // Perspective matrix
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
 
+    // Lights
+    DirLight dirLight(glm::vec3(4.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    PointLight pointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.f, 1.0f, 1.0f), 1.0f, 0.1f, 0.2f);
+
     // Models
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 0));
     models.push_back(Model(glm::vec3(2.0f, 0.0f, 0.0f), 1));
-
-    Light testLight(glm::vec3(4.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glm::mat4 viewMatrix = currentCamera->getViewMatrix();
 
         unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
@@ -414,18 +415,31 @@ int main(void) {
         GLuint tex0Address = glGetUniformLocation(shaderProg, "tex0");
         glUniform1i(tex0Address, 0);
 
-        GLuint lightAddress = glGetUniformLocation(shaderProg, "lightPos");
-        glUniform3fv(lightAddress, 1, glm::value_ptr(testLight.getLightPos()));
+        GLuint lightDirAddress = glGetUniformLocation(shaderProg, "lightDir");
+        glUniform3fv(lightDirAddress, 1, glm::value_ptr(dirLight.getLightDir()));
 
         GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
-        glUniform3fv(lightColorAddress, 1, glm::value_ptr(testLight.getLightColor()));
+        glUniform3fv(lightColorAddress, 1, glm::value_ptr(dirLight.getLightColor()));
+
+        GLuint pointLightPosAddress = glGetUniformLocation(shaderProg, "pointLightPos");
+        glUniform3fv(pointLightPosAddress, 1, glm::value_ptr(pointLight.getPosition()));
+
+        GLuint pointLightColorAddress = glGetUniformLocation(shaderProg, "pointLightColor");
+        glUniform3fv(pointLightColorAddress, 1, glm::value_ptr(pointLight.getLightColor()));
+
+        GLuint pointLightConstantAddress = glGetUniformLocation(shaderProg, "pointLightConstant");
+        glUniform1f(pointLightConstantAddress, pointLight.getConstant());
+
+        GLuint pointLightLinearAddress = glGetUniformLocation(shaderProg, "pointLightLinear");
+        glUniform1f(pointLightLinearAddress, pointLight.getLinear());
+
+        GLuint pointLightQuadraticAddress = glGetUniformLocation(shaderProg, "pointLightQuadratic");
+        glUniform1f(pointLightQuadraticAddress, pointLight.getQuadratic());
 
         // Draw the first model (rat)
-        std::cout << "Drawing first model with " << fullVertexData.size() << " vertices." << std::endl;
         models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
 
         // Draw the second model (bunny)
-        std::cout << "Drawing second model with " << obj2_fullVertexData.size() << " vertices." << std::endl;
         models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */
@@ -434,6 +448,7 @@ int main(void) {
         /* Poll for and process events */
         glfwPollEvents();
     }
+
     glDeleteVertexArrays(2, VAOs);
     glDeleteBuffers(2, VBOs);
 
