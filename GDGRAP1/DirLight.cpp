@@ -10,6 +10,9 @@ void DirLight::setLightDir(glm::vec3 dir) {
     lightDir = dir;
 }
 
+/*
+    Key_Callback for DirLight, manipulates light intensity    
+*/
 void DirLight::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {

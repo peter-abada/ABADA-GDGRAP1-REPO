@@ -13,30 +13,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-/*
- * PC02:
- *
- *TODO:
- * - Create base class "Camera" to be inherited by classes "OrthoCamera" and "PerspectiveCamera"
- * - Create base class "Light" to be inherited by classes "Dir(ection)Light" and "PointLight"
- *
- * - Render two objects: one main object and one to represent a light source
- * - Add a direction light at (4, -5, 0), the second object will serve as a point light
- * - Main object should be textured and shaded and account for lighting
- * - Main object rotation controlled by WS (X axis), AD (Y axis) and QE (Z axis)
- * - Light object also controlled by WASDQE to rotate around main object
- * - Press space to switch control between main object and light object
- * - Control point light intensity using up and down and direction light intensity using left and right
- * - Perspective camera rotating around main object controlled with mouse
- * - Orthographic camera viewing both objects from the top
- * - Switch between cameras using 1 and 2
- *
- * - We'll need a new model
- *
- *
-*/
-
-
 // Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
 
@@ -313,9 +289,8 @@ int main(void) {
     }
 
 
-
-// Some obj files dont have normal stuff so make sure the model has one to load textures properly
-
+    //Certain objects may not have normal data, this checks if the model does,
+    //Otherwise, push an empty index
     
     std::vector<GLfloat> fullVertexData;
     for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
@@ -435,7 +410,7 @@ int main(void) {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
-    std::cout << "a";
+
     // Perspective matrix
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
     // Models

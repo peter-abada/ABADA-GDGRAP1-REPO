@@ -44,12 +44,15 @@ void PointLight::setQuadratic(float quadratic) {
     this->quadratic = quadratic;
 }
 
+/*
+    Key_Callback for PointLight, manipulates light intensity    
+*/
 void PointLight::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {
         case GLFW_KEY_UP:
             setIntensity(getIntensity() + 1.f);
-			std::cout << "Intensity: " << getIntensity() << std::endl;
+			//std::cout << "Intensity: " << getIntensity() << std::endl;
             break;
         case GLFW_KEY_DOWN:
             setIntensity(getIntensity() - 0.1f);

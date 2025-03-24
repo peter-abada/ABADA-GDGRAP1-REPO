@@ -19,7 +19,6 @@ void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indice
 
     glUseProgram(shaderProg);
     glBindVertexArray(VAO);
-    //glDrawElements(GL_TRIANGLES, mesh_indices.size(), GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, vertData.size() / 8);
 }
 
@@ -34,6 +33,10 @@ void Model::setScale(glm::vec3& scl) { scale = scl; }
 
 int Model::getId() { return id; }
 
+/*
+    Key_Callback function for Model class input
+    Modifies model rotation
+*/
 void Model::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         float rotationSpeed = (id == 0) ? 1.0f : 2.0f; // Faster rotations for the light source object
