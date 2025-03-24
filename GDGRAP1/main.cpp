@@ -7,8 +7,9 @@
 #include "Model.hpp"
 #include "OrthoCamera.hpp"
 #include "PersCamera.hpp"
+#include "Light.hpp"
 #include "DirLight.hpp"
-
+#include "PointLight.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -35,6 +36,7 @@
  *
 */
 
+
 // Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
 
@@ -49,11 +51,11 @@ float pitch = 0.0f;
 float lastX = 300.f, lastY = 300.f;
 bool initialMouse = true;
 bool leftMouseButtonPressed = false;
-int selectedModelId = 0; // Add a variable to track the selected model
+int selectedModelId = 0; // To check current model (debugging purposes) 
 
 // Mouse callback for camera control using mouse
+// Click and hold to move camera around main object
 void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
-
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         leftMouseButtonPressed = true;
     }
@@ -102,6 +104,13 @@ void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
     }
 }
 
+// Lights
+
+DirLight dirLight(glm::vec3(4.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
+PointLight pointLight(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.1f, 0.2f);
+
+
 // Key callback for moving the camera and spawning models using the keyboard
 void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -119,6 +128,9 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_Q:
         case GLFW_KEY_E:
             models[selectedModelId].Key_Callback(window, key, scancode, action, mods);
+            if (selectedModelId) {
+                pointLight.Key_Callback(window, key, scancode, action, mods);
+            }
             break;
         case GLFW_KEY_1:
             currentCamera = &orthoCamera;
@@ -126,9 +138,18 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_2:
             currentCamera = &persCamera;
             break;
+        case GLFW_KEY_LEFT:
+        case GLFW_KEY_RIGHT:
+            dirLight.Key_Callback(window, key, scancode, action, mods);
+            break;
+        case GLFW_KEY_UP:
+        case GLFW_KEY_DOWN:
+            pointLight.Key_Callback(window, key, scancode, action, mods);
+            break;
         }
     }
 }
+
 
 /*
 Function to load shaders from a file path
@@ -165,6 +186,32 @@ GLuint loadShader(std::string vert, std::string frag) {
     return shaderProg;
 }
 
+/*
+    Function to load textures from a file path
+    Parameter is the texture file path as a string
+    Returns the texture
+    Load the texture in main()
+*/
+GLuint loadTexture(std::string path) {
+    int imgWidth, imgHeight, colorChannels;
+
+	unsigned char* tex_bytes = stbi_load(path.c_str(), &imgWidth, &imgHeight, &colorChannels, 0);
+
+	GLuint texture;
+
+	glGenTextures(1, &texture);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	stbi_image_free(tex_bytes);
+
+	return texture;
+}
+
 int main(void) {
     float height = 600, width = 600;
 
@@ -199,21 +246,12 @@ int main(void) {
         0.f, 0.f
     };
 
-    int imgWidth, imgHeight, colorChannels;
+    //Table texture
+    GLuint texture = loadTexture("3D/tex/WoodSeemles.jpg");
 
-    unsigned char* tex_bytes = stbi_load("3D/partenza.jpg", &imgWidth, &imgHeight, &colorChannels, 0);
-
-    GLuint texture;
-
-    glGenTextures(1, &texture);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(tex_bytes);
+    //Earth texture
+    stbi_set_flip_vertically_on_load(true);
+    GLuint texture2 = loadTexture("3D/world5400x2700.jpg");
 
     glEnable(GL_DEPTH_TEST);
 
@@ -226,7 +264,12 @@ int main(void) {
     glLinkProgram(shaderProg);
 
     // Load the first model 
-    std::string path = "3D/rat.obj";
+    /*
+        MODEL CREDIT:
+        "Round Table" by ksalk3d
+        https://free3d.com/3d-model/round-table-928375.html
+    */
+    std::string path = "3D/roundtable.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
     std::string warning, error;
@@ -235,13 +278,23 @@ int main(void) {
 
     bool success = tinyobj::LoadObj(&attributes, &shapes, &material, &warning, &error, path.c_str());
 
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
     std::vector<GLuint> mesh_indices;
     for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
         mesh_indices.push_back(shapes[0].mesh.indices[i].vertex_index);
     }
 
     // Load the second model 
-    std::string obj2_path = "3D/rat.obj";
+    /*
+        MODEL CREDIT:
+        "World - Earth" by 3dpixel_be
+        https://free3d.com/3d-model/world-16887.html
+    */
+    std::string obj2_path = "3D/world.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
 
@@ -249,98 +302,142 @@ int main(void) {
 
     success = tinyobj::LoadObj(&obj2_attributes, &obj2_shapes, &obj2_material, &warning, &error, obj2_path.c_str());
 
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
     std::vector<GLuint> obj2_mesh_indices;
     for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
         obj2_mesh_indices.push_back(obj2_shapes[0].mesh.indices[i].vertex_index);
     }
 
+
+
+// Some obj files dont have normal stuff so make sure the model has one to load textures properly
+
+    
     std::vector<GLfloat> fullVertexData;
     for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
         tinyobj::index_t vData = shapes[0].mesh.indices[i];
 
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
-        fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+        if (vData.vertex_index * 3 + 2 < attributes.vertices.size()) {
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
+            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "[OBJ1] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+        }
 
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
-        fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+        if (vData.normal_index * 3 + 2 < attributes.normals.size() && vData.normal_index >= 0) {
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
+            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+        }
+        else {
+            //std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            fullVertexData.push_back(0.0f); // Default normal x
+            fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+            fullVertexData.push_back(0.0f); // Default normal z
+        }
 
-        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2)]);
-        fullVertexData.push_back(attributes.texcoords[(vData.texcoord_index * 2 + 1)]);
+        if (vData.texcoord_index * 2 + 1 < attributes.texcoords.size() && vData.texcoord_index >= 0) {
+            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2]);
+            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2 + 1]);
+        }
+        else {
+            std::cerr << "[OBJ1] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            fullVertexData.push_back(0.0f);
+            fullVertexData.push_back(0.0f);
+        }
     }
 
-    GLuint VAOs[2], VBOs[2], EBOs[2], VBOS_UV[2];
+    std::vector<GLfloat> obj2_fullVertexData;
+    for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
+        tinyobj::index_t vData = obj2_shapes[0].mesh.indices[i];
+
+        if (vData.vertex_index * 3 + 2 < obj2_attributes.vertices.size()) {
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3]);
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 1]);
+            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 2]);
+        }
+        else {
+            std::cerr << "[OBJ2] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+        }
+
+        if (vData.normal_index * 3 + 2 < obj2_attributes.normals.size() && vData.normal_index >= 0) {
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3]);
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 1]);
+            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
+        }
+        else {
+            //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f); // Default normal x
+            obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+            obj2_fullVertexData.push_back(0.0f); // Default normal z
+        }
+
+        if (vData.texcoord_index * 2 + 1 < obj2_attributes.texcoords.size() && vData.texcoord_index >= 0) {
+            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2]);
+            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2 + 1]);
+        }
+        else {
+            std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+            obj2_fullVertexData.push_back(0.0f);
+            obj2_fullVertexData.push_back(0.0f);
+        }
+    }
+
+    GLuint VAOs[2], VBOs[2];
 
     glGenVertexArrays(2, VAOs);
     glGenBuffers(2, VBOs);
-    //glGenBuffers(2, VBOS_UV);
-    //glGenBuffers(2, EBOs);
 
     // Setup for the first model
     glBindVertexArray(VAOs[0]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
-
-    GLintptr normPtr1 = 3 * sizeof(GLfloat);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
-
-    GLintptr uvPtr1 = 6 * sizeof(GLfloat);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
-
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attributes.vertices.size(), &attributes.vertices[0], GL_STATIC_DRAW);
-
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
 
-    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
+    GLintptr normPtr1 = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
+    glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
+    GLintptr uvPtr1 = 6 * sizeof(GLfloat);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
     glEnableVertexAttribArray(2);
 
     // Setup for the second model 
     glBindVertexArray(VAOs[1]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_fullVertexData.size(), obj2_fullVertexData.data(), GL_DYNAMIC_DRAW);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
-    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
-    
-    GLintptr normPtr2 = 3 * sizeof(GLfloat);
+    glEnableVertexAttribArray(0);
 
+    GLintptr normPtr2 = 3 * sizeof(GLfloat);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr2);
+    glEnableVertexAttribArray(1);
 
     GLintptr uvPtr2 = 6 * sizeof(GLfloat);
-
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr2);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_attributes.vertices.size(), &obj2_attributes.vertices[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
 
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * obj2_mesh_indices.size(), obj2_mesh_indices.data(), GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, VBOS_UV[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (sizeof(UV) / sizeof(UV[0])), &UV[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);*/
-    glEnableVertexAttribArray(1);
-    //glEnableVertexAttribArray(2);
     glBindVertexArray(0);
-
+    std::cout << "a";
     // Perspective matrix
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
-
     // Models
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 0));
     models.push_back(Model(glm::vec3(2.0f, 0.0f, 0.0f), 1));
@@ -349,7 +446,6 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glm::mat4 viewMatrix = currentCamera->getViewMatrix();
 
         unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
@@ -362,11 +458,39 @@ int main(void) {
         GLuint tex0Address = glGetUniformLocation(shaderProg, "tex0");
         glUniform1i(tex0Address, 0);
 
-        // Draw the first model (rat)
+        GLuint lightDirAddress = glGetUniformLocation(shaderProg, "lightDir");
+        glUniform3fv(lightDirAddress, 1, glm::value_ptr(dirLight.getLightDir()));
+
+        GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
+        glUniform3fv(lightColorAddress, 1, glm::value_ptr(dirLight.getLightColor()));
+
+        GLuint pointLightPosAddress = glGetUniformLocation(shaderProg, "pointLightPos");
+        glUniform3fv(pointLightPosAddress, 1, glm::value_ptr(pointLight.getPosition()));
+
+        GLuint pointLightColorAddress = glGetUniformLocation(shaderProg, "pointLightColor");
+        glUniform3fv(pointLightColorAddress, 1, glm::value_ptr(pointLight.getLightColor()));
+
+        GLuint pointLightConstantAddress = glGetUniformLocation(shaderProg, "pointLightConstant");
+        glUniform1f(pointLightConstantAddress, pointLight.getConstant());
+
+        GLuint pointLightLinearAddress = glGetUniformLocation(shaderProg, "pointLightLinear");
+        glUniform1f(pointLightLinearAddress, pointLight.getLinear());
+
+        GLuint pointLightQuadraticAddress = glGetUniformLocation(shaderProg, "pointLightQuadratic");
+        glUniform1f(pointLightQuadraticAddress, pointLight.getQuadratic());
+
+        GLuint dirLightIntensityAddress = glGetUniformLocation(shaderProg, "dirLightIntensity");
+        glUniform1f(dirLightIntensityAddress, dirLight.getIntensity());
+
+        GLuint pointLightIntensityAddress = glGetUniformLocation(shaderProg, "pointLightIntensity");
+        glUniform1f(pointLightIntensityAddress, pointLight.getIntensity());
+
+        // Draw the first model (table)
         models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
 
-        // Draw the second model (bunny)
-        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, fullVertexData);
+        // Draw the second model (earth)
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -374,9 +498,9 @@ int main(void) {
         /* Poll for and process events */
         glfwPollEvents();
     }
+
     glDeleteVertexArrays(2, VAOs);
     glDeleteBuffers(2, VBOs);
-    glDeleteBuffers(2, EBOs);
 
     glfwTerminate();
     return 0;

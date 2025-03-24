@@ -1,6 +1,6 @@
 #include "Model.hpp"
 
-Model::Model(glm::vec3 pos, int id) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.01f, 0.01f, 0.01f), id(id) {}
+Model::Model(glm::vec3 pos, int id) : position(pos), rotation(0.0f, 0.0f, 0.0f), scale(0.5f, 0.5f, 0.5f), id(id) {}
 
 void Model::draw(GLuint shaderProg, GLuint VAO, std::vector<GLuint>& mesh_indices, std::vector<GLfloat> vertData) {
     glm::mat4 identity_matrix4 = glm::mat4(1.0f);
@@ -38,17 +38,16 @@ void Model::Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         float rotationSpeed = (id == 0) ? 1.0f : 2.0f; // Faster rotations for the light source object
         switch (key) {
-            // removed rotations for x axis for light source due to weird movements may need to look into, it will probably look fine once lighting is actually added but rn it looks goofy as shit lol
+           
         case GLFW_KEY_W:
 
-            if (!id) {
-                rotation.x -= rotationSpeed;
-            }
+            rotation.x -= rotationSpeed;
+
             break;
         case GLFW_KEY_S:
-            if (!id) {
-                rotation.x += rotationSpeed;
-            }
+
+            rotation.x += rotationSpeed;
+
 
             break;
         case GLFW_KEY_A:
