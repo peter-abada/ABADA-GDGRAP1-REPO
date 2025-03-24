@@ -44,3 +44,16 @@ float PointLight::getQuadratic() {
 void PointLight::setQuadratic(float quadratic) {
     this->quadratic = quadratic;
 }
+
+void PointLight::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        switch (key) {
+        case GLFW_KEY_UP:
+
+            break;
+        case GLFW_KEY_DOWN:
+
+            break;
+        }
+    }
+}

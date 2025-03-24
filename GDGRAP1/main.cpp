@@ -54,6 +54,7 @@ bool leftMouseButtonPressed = false;
 int selectedModelId = 0; // To check current model (debugging purposes) 
 
 // Mouse callback for camera control using mouse
+// Click and hold to move camera around main object
 void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         leftMouseButtonPressed = true;

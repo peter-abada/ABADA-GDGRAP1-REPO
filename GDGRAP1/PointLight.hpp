@@ -29,6 +29,8 @@ public:
 
     float getQuadratic();
     void setQuadratic(float quadratic);
+
+    void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) override;
 };
 
 #endif
