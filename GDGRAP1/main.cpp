@@ -2,16 +2,17 @@
 #include <string>
 #include <vector>
 #include <ctime>
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 #include "Model.hpp"
 #include "OrthoCamera.hpp"
 #include "PersCamera.hpp"
-#include "Light.hpp"
 #include "DirLight.hpp"
 #include "PointLight.hpp"
+#include "Shader.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 
 // Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
@@ -126,42 +127,6 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
-/*
-Function to load shaders from a file path
-Parameters are the file paths for the shaders as strings
-Returns the final shader program
-Load the shader program in main()
-*/
-GLuint loadShader(std::string vert, std::string frag) {
-    std::fstream vertSrc("Shaders/sample.vert");
-    std::stringstream vertBuff;
-    vertBuff << vertSrc.rdbuf();
-
-    std::string vertS = vertBuff.str();
-    const char* v = vertS.c_str();
-
-    std::fstream fragSrc("Shaders/sample.frag");
-    std::stringstream fragBuff;
-    fragBuff << fragSrc.rdbuf();
-    std::string fragS = fragBuff.str();
-    const char* f = fragS.c_str();
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &v, NULL);
-    glCompileShader(vertexShader);
-
-    GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &f, NULL);
-    glCompileShader(fragShader);
-
-    GLuint shaderProg = glCreateProgram();
-    glAttachShader(shaderProg, vertexShader);
-    glAttachShader(shaderProg, fragShader);
-
-    return shaderProg;
-}
-
 /*
     Function to load textures from a file path
     Parameter is the texture file path as a string
@@ -236,8 +201,15 @@ int main(void) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Load shaders then link the shader program
-    GLuint shaderProg = loadShader("Shaders/sample.vert", "Shaders/sample.frag");
-    glLinkProgram(shaderProg);
+    //GLuint shaderProg = loadShader("Shaders/sample.vert", "Shaders/sample.frag");
+    //glLinkProgram(shaderProg);
+
+    ////////SHADER CLASS TEST/////////
+
+    Shader carShader("Shaders/sample.vert", "Shaders/sample.frag", "car");
+    glLinkProgram(carShader.getProg());
+
+    //////////////////////////////////
 
     // Load the first model 
     /*
@@ -423,49 +395,49 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glm::mat4 viewMatrix = currentCamera->getViewMatrix();
 
-        unsigned int projLoc = glGetUniformLocation(shaderProg, "projection");
+        unsigned int projLoc = glGetUniformLocation(carShader.getProg(), "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        unsigned int viewLoc = glGetUniformLocation(shaderProg, "view");
+        unsigned int viewLoc = glGetUniformLocation(carShader.getProg(), "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
         glBindTexture(GL_TEXTURE_2D, texture);
-        GLuint tex0Address = glGetUniformLocation(shaderProg, "tex0");
+        GLuint tex0Address = glGetUniformLocation(carShader.getProg(), "tex0");
         glUniform1i(tex0Address, 0);
 
-        GLuint lightDirAddress = glGetUniformLocation(shaderProg, "lightDir");
+        GLuint lightDirAddress = glGetUniformLocation(carShader.getProg(), "lightDir");
         glUniform3fv(lightDirAddress, 1, glm::value_ptr(dirLight.getLightDir()));
 
-        GLuint lightColorAddress = glGetUniformLocation(shaderProg, "lightColor");
+        GLuint lightColorAddress = glGetUniformLocation(carShader.getProg(), "lightColor");
         glUniform3fv(lightColorAddress, 1, glm::value_ptr(dirLight.getLightColor()));
 
-        GLuint pointLightPosAddress = glGetUniformLocation(shaderProg, "pointLightPos");
+        GLuint pointLightPosAddress = glGetUniformLocation(carShader.getProg(), "pointLightPos");
         glUniform3fv(pointLightPosAddress, 1, glm::value_ptr(pointLight.getPosition()));
 
-        GLuint pointLightColorAddress = glGetUniformLocation(shaderProg, "pointLightColor");
+        GLuint pointLightColorAddress = glGetUniformLocation(carShader.getProg(), "pointLightColor");
         glUniform3fv(pointLightColorAddress, 1, glm::value_ptr(pointLight.getLightColor()));
 
-        GLuint pointLightConstantAddress = glGetUniformLocation(shaderProg, "pointLightConstant");
+        GLuint pointLightConstantAddress = glGetUniformLocation(carShader.getProg(), "pointLightConstant");
         glUniform1f(pointLightConstantAddress, pointLight.getConstant());
 
-        GLuint pointLightLinearAddress = glGetUniformLocation(shaderProg, "pointLightLinear");
+        GLuint pointLightLinearAddress = glGetUniformLocation(carShader.getProg(), "pointLightLinear");
         glUniform1f(pointLightLinearAddress, pointLight.getLinear());
 
-        GLuint pointLightQuadraticAddress = glGetUniformLocation(shaderProg, "pointLightQuadratic");
+        GLuint pointLightQuadraticAddress = glGetUniformLocation(carShader.getProg(), "pointLightQuadratic");
         glUniform1f(pointLightQuadraticAddress, pointLight.getQuadratic());
 
-        GLuint dirLightIntensityAddress = glGetUniformLocation(shaderProg, "dirLightIntensity");
+        GLuint dirLightIntensityAddress = glGetUniformLocation(carShader.getProg(), "dirLightIntensity");
         glUniform1f(dirLightIntensityAddress, dirLight.getIntensity());
 
-        GLuint pointLightIntensityAddress = glGetUniformLocation(shaderProg, "pointLightIntensity");
+        GLuint pointLightIntensityAddress = glGetUniformLocation(carShader.getProg(), "pointLightIntensity");
         glUniform1f(pointLightIntensityAddress, pointLight.getIntensity());
 
         // Draw the first model (table)
-        models[0].draw(shaderProg, VAOs[0], mesh_indices, fullVertexData);
+        models[0].draw(carShader.getProg(), VAOs[0], mesh_indices, fullVertexData);
 
         // Draw the second model (earth)
         glBindTexture(GL_TEXTURE_2D, texture2);
-        models[1].draw(shaderProg, VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
+        models[1].draw(carShader.getProg(), VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

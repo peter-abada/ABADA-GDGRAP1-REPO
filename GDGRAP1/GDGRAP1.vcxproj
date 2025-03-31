@@ -148,6 +148,7 @@
     <ClCompile Include="OrthoCamera.cpp" />
     <ClCompile Include="PersCamera.cpp" />
     <ClCompile Include="PointLight.cpp" />
+    <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="OrthoCamera.hpp" />
     <ClInclude Include="PersCamera.hpp" />
     <ClInclude Include="PointLight.hpp" />
+    <ClInclude Include="Shader.hpp" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>
