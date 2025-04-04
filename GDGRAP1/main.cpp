@@ -214,7 +214,7 @@ int main(void) {
         "Round Table" by ksalk3d
         https://free3d.com/3d-model/round-table-928375.html
     */
-    std::string path = "3D/roundtable.obj";
+    std::string path = "3D/racecar.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
     std::string warning, error;
@@ -227,11 +227,16 @@ int main(void) {
         std::cerr << "Failed to load model: " << error << std::endl;
         return -1;
     }
-
+	std::cout << "Shapes: " << shapes.size() << std::endl;
     std::vector<GLuint> mesh_indices;
-    for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
-        mesh_indices.push_back(shapes[0].mesh.indices[i].vertex_index);
-    }
+
+
+	for (int i = 0; i < shapes.size(); i++) {
+        for (int j = 0; j < shapes[i].mesh.indices.size(); j++) {
+            mesh_indices.push_back(shapes[i].mesh.indices[j].vertex_index);
+        }
+	}
+    
 
     // Load the second model 
     /*
@@ -262,41 +267,43 @@ int main(void) {
     //Otherwise, push an empty index
     
     std::vector<GLfloat> fullVertexData;
-    for (int i = 0; i < shapes[0].mesh.indices.size(); i++) {
-        tinyobj::index_t vData = shapes[0].mesh.indices[i];
+    for (int i = 0; i < shapes.size(); i++) {
+        for (int j = 0; j < shapes[i].mesh.indices.size(); j++) {
+            tinyobj::index_t vData = shapes[i].mesh.indices[j];
 
-        if (vData.vertex_index * 3 + 2 < attributes.vertices.size()) {
-            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
-            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
-            fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
-        }
-        else {
-            std::cerr << "[OBJ1] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
-            fullVertexData.push_back(0.0f);
-            fullVertexData.push_back(0.0f);
-            fullVertexData.push_back(0.0f);
-        }
+            if (vData.vertex_index * 3 + 2 < attributes.vertices.size()) {
+                fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3]);
+                fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 1]);
+                fullVertexData.push_back(attributes.vertices[vData.vertex_index * 3 + 2]);
+            }
+            else {
+                std::cerr << "[OBJ1] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+                fullVertexData.push_back(0.0f);
+                fullVertexData.push_back(0.0f);
+                fullVertexData.push_back(0.0f);
+            }
 
-        if (vData.normal_index * 3 + 2 < attributes.normals.size() && vData.normal_index >= 0) {
-            fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
-            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
-            fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
-        }
-        else {
-            //std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
-            fullVertexData.push_back(0.0f); // Default normal x
-            fullVertexData.push_back(1.0f); // Default normal y (pointing up)
-            fullVertexData.push_back(0.0f); // Default normal z
-        }
+            if (vData.normal_index * 3 + 2 < attributes.normals.size() && vData.normal_index >= 0) {
+                fullVertexData.push_back(attributes.normals[vData.normal_index * 3]);
+                fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 1]);
+                fullVertexData.push_back(attributes.normals[vData.normal_index * 3 + 2]);
+            }
+            else {
+                //std::cerr << "[OBJ1] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+                fullVertexData.push_back(0.0f); // Default normal x
+                fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+                fullVertexData.push_back(0.0f); // Default normal z
+            }
 
-        if (vData.texcoord_index * 2 + 1 < attributes.texcoords.size() && vData.texcoord_index >= 0) {
-            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2]);
-            fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2 + 1]);
-        }
-        else {
-            std::cerr << "[OBJ1] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
-            fullVertexData.push_back(0.0f);
-            fullVertexData.push_back(0.0f);
+            if (vData.texcoord_index * 2 + 1 < attributes.texcoords.size() && vData.texcoord_index >= 0) {
+                fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2]);
+                fullVertexData.push_back(attributes.texcoords[vData.texcoord_index * 2 + 1]);
+            }
+            else {
+                std::cerr << "[OBJ1] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+                fullVertexData.push_back(0.0f);
+                fullVertexData.push_back(0.0f);
+            }
         }
     }
 
