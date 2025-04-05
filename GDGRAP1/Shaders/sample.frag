@@ -4,9 +4,12 @@ in vec2 texCoord;
 in vec3 normCoord;
 in vec3 fragPos;
 
+in mat3 TBN;
+
 out vec4 FragColor;
 
 uniform sampler2D texture1;
+uniform sampler2D norm_tex;
 uniform vec3 lightColor;
 uniform vec3 lightDir;
 uniform vec3 viewPos;
@@ -28,7 +31,12 @@ void main() {
     vec3 ambient = ambientStrength * lightColor * dirLightIntensity;
 
     // Diffuse for directional light
-    vec3 norm = normalize(normCoord);
+    // vec3 norm = normalize(normCoord);
+
+    vec3 norm = texture(norm_tex, texCoord).rgb;
+    norm = normalize(norm * 2.0 - 1.0);
+    norm = normalize(TBN * norm);
+
     float diff = max(dot(norm, normalize(-lightDir)), 0.0);
     vec3 diffuse = diff * lightColor * dirLightIntensity;
 

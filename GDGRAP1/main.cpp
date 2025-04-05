@@ -188,11 +188,27 @@ int main(void) {
     };
 
     //Table texture
-    GLuint texture = loadTexture("3D/tex/black_metal.jpg");
+    GLuint texture = loadTexture("3D/tex/rock.jpg");
 
     //Earth texture
     stbi_set_flip_vertically_on_load(true);
     GLuint texture2 = loadTexture("3D/world5400x2700.jpg");
+
+	int img_width, img_height, colorChannels;
+	unsigned char* tex_bytes = stbi_load("3D/tex/rock_normal.jpg", &img_width, &img_height, &colorChannels, 0);
+
+    GLuint norm_tex;
+	glGenTextures(1, &norm_tex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, norm_tex);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	stbi_image_free(tex_bytes);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -208,12 +224,6 @@ int main(void) {
     Shader skyShader("Shaders/skybox.vert", "Shaders/skybox.frag", "sky");
     glLinkProgram(skyShader.getProg());
 
-    // Load the first model 
-    /*
-        MODEL CREDIT:
-        "Round Table" by ksalk3d
-        https://free3d.com/3d-model/round-table-928375.html
-    */
     std::string path = "3D/racecar.obj";
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> material;
@@ -236,14 +246,64 @@ int main(void) {
             mesh_indices.push_back(shapes[i].mesh.indices[j].vertex_index);
         }
 	}
-    
 
-    // Load the second model 
-    /*
-        MODEL CREDIT:
-        "World - Earth" by 3dpixel_be
-        https://free3d.com/3d-model/world-16887.html
-    */
+	std::vector<glm::vec3> tangents;
+	std::vector<glm::vec3> bitangents;
+
+    for (int i = 0; i < shapes[0].mesh.indices.size(); i += 3) {
+        tinyobj::index_t vData1 = shapes[0].mesh.indices[i];
+        tinyobj::index_t vData2 = shapes[0].mesh.indices[i + 1];
+        tinyobj::index_t vData3 = shapes[0].mesh.indices[i + 2];
+
+        glm::vec3 v1 = glm::vec3(
+            attributes.vertices[(vData1.vertex_index * 3)],
+            attributes.vertices[(vData1.vertex_index * 3) + 1],
+            attributes.vertices[(vData1.vertex_index * 3) + 2]
+        );
+        glm::vec3 v2 = glm::vec3(
+            attributes.vertices[(vData2.vertex_index * 3)],
+            attributes.vertices[(vData2.vertex_index * 3) + 1],
+            attributes.vertices[(vData2.vertex_index * 3) + 2]
+        );
+        glm::vec3 v3 = glm::vec3(
+            attributes.vertices[(vData3.vertex_index * 3)],
+            attributes.vertices[(vData3.vertex_index * 3) + 1],
+            attributes.vertices[(vData3.vertex_index * 3) + 2]
+        );
+
+        glm::vec2 uv1 = glm::vec2(
+            attributes.texcoords[(vData1.texcoord_index * 2)],
+            attributes.texcoords[(vData1.texcoord_index * 2) + 1]
+        );
+        glm::vec2 uv2 = glm::vec2(
+            attributes.texcoords[(vData2.texcoord_index * 2)],
+            attributes.texcoords[(vData2.texcoord_index * 2) + 1]
+        );
+        glm::vec2 uv3 = glm::vec2(
+            attributes.texcoords[(vData3.texcoord_index * 2)],
+            attributes.texcoords[(vData3.texcoord_index * 2) + 1]
+        );
+
+        glm::vec3 deltaPos1 = v2 - v1;
+        glm::vec3 deltaPos2 = v3 - v1;
+
+        glm::vec2 deltaUV1 = uv2 - uv1;
+        glm::vec2 deltaUV2 = uv3 - uv1;
+
+        float r = 1.0f / ((deltaUV1.x * deltaUV2.y) - (deltaUV1.y * deltaUV2.x));
+
+        glm::vec3 tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+        glm::vec3 bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+
+        tangents.push_back(tangent);
+        tangents.push_back(tangent);
+        tangents.push_back(tangent);
+
+        bitangents.push_back(bitangent);
+        bitangents.push_back(bitangent);
+        bitangents.push_back(bitangent);
+    }
+    
     std::string obj2_path = "3D/world.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
@@ -304,6 +364,15 @@ int main(void) {
                 fullVertexData.push_back(0.0f);
                 fullVertexData.push_back(0.0f);
             }
+
+			// Tangent and bitangent data
+			fullVertexData.push_back(tangents[j].x);
+			fullVertexData.push_back(tangents[j].y);
+			fullVertexData.push_back(tangents[j].z);
+			fullVertexData.push_back(bitangents[j].x);
+			fullVertexData.push_back(bitangents[j].y);
+			fullVertexData.push_back(bitangents[j].z);
+
         }
     }
 
@@ -344,6 +413,15 @@ int main(void) {
             obj2_fullVertexData.push_back(0.0f);
             obj2_fullVertexData.push_back(0.0f);
         }
+
+        // Tangent and bitangent data
+        fullVertexData.push_back(tangents[i].x);
+        fullVertexData.push_back(tangents[i].y);
+        fullVertexData.push_back(tangents[i].z);
+        fullVertexData.push_back(bitangents[i].x);
+        fullVertexData.push_back(bitangents[i].y);
+        fullVertexData.push_back(bitangents[i].z);
+
     }
 
     float skyboxVertices[]{
@@ -387,7 +465,7 @@ int main(void) {
     glBindVertexArray(skyVAO);
     glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GL_INT) * 36, &skyboxIndices, GL_STATIC_DRAW);
@@ -438,16 +516,22 @@ int main(void) {
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fullVertexData.size(), fullVertexData.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
 
     GLintptr normPtr1 = 3 * sizeof(GLfloat);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)normPtr1);
     glEnableVertexAttribArray(1);
 
     GLintptr uvPtr1 = 6 * sizeof(GLfloat);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)uvPtr1);
     glEnableVertexAttribArray(2);
+
+	GLintptr tangentPtr = 8 * sizeof(float);
+	GLintptr bitangentPtr = 11 * sizeof(float);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)tangentPtr);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)bitangentPtr);
 
     // Setup for the second model 
     glBindVertexArray(VAOs[1]);
@@ -455,16 +539,19 @@ int main(void) {
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj2_fullVertexData.size(), obj2_fullVertexData.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
 
     GLintptr normPtr2 = 3 * sizeof(GLfloat);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr2);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)normPtr2);
     glEnableVertexAttribArray(1);
 
     GLintptr uvPtr2 = 6 * sizeof(GLfloat);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void*)uvPtr2);
     glEnableVertexAttribArray(2);
+
+	glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
 
     glBindVertexArray(0);
 
@@ -511,9 +598,15 @@ int main(void) {
         unsigned int viewLoc = glGetUniformLocation(carShader.getProg(), "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
-        glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE0);
         GLuint tex0Address = glGetUniformLocation(carShader.getProg(), "tex0");
+        glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(tex0Address, 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		GLuint normTexAddress = glGetUniformLocation(carShader.getProg(), "norm_tex");
+		glBindTexture(GL_TEXTURE_2D, norm_tex);
+		glUniform1i(normTexAddress, 1);
 
         GLuint lightDirAddress = glGetUniformLocation(carShader.getProg(), "lightDir");
         glUniform3fv(lightDirAddress, 1, glm::value_ptr(dirLight.getLightDir()));
