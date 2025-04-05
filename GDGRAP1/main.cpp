@@ -188,7 +188,7 @@ int main(void) {
     };
 
     //Table texture
-    GLuint texture = loadTexture("3D/tex/WoodSeemles.jpg");
+    GLuint texture = loadTexture("3D/tex/black_metal.jpg");
 
     //Earth texture
     stbi_set_flip_vertically_on_load(true);
