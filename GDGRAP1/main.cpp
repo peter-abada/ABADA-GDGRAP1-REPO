@@ -268,13 +268,31 @@ int main(void) {
     }
 
     std::vector<GLuint> obj2_mesh_indices;
-    /*for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
-        obj2_mesh_indices.push_back(obj2_shapes[0].mesh.indices[i].vertex_index);
-    }*/
 
     for (int i = 0; i < obj2_shapes.size(); i++) {
         for (int j = 0; j < obj2_shapes[i].mesh.indices.size(); j++) {
             obj2_mesh_indices.push_back(obj2_shapes[i].mesh.indices[j].vertex_index);
+        }
+    }
+
+    std::string obj3_path = "3D/racecar.obj";
+    std::vector<tinyobj::shape_t> obj3_shapes;
+    std::vector<tinyobj::material_t> obj3_material;
+
+    tinyobj::attrib_t obj3_attributes;
+
+    success = tinyobj::LoadObj(&obj3_attributes, &obj3_shapes, &obj3_material, &warning, &error, obj3_path.c_str());
+
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
+    std::vector<GLuint> obj3_mesh_indices;
+
+    for (int i = 0; i < obj3_shapes.size(); i++) {
+        for (int j = 0; j < obj3_shapes[i].mesh.indices.size(); j++) {
+            obj3_mesh_indices.push_back(obj3_shapes[i].mesh.indices[j].vertex_index);
         }
     }
 
@@ -364,6 +382,47 @@ int main(void) {
         }
     }
 
+    std::vector<GLfloat> obj3_fullVertexData;
+    for (int i = 0; i < obj3_shapes.size(); i++) {
+        for (int j = 0; j < obj3_shapes[i].mesh.indices.size(); j++) {
+            tinyobj::index_t vData = obj3_shapes[i].mesh.indices[j];
+
+            if (vData.vertex_index * 3 + 2 < obj3_attributes.vertices.size()) {
+                obj3_fullVertexData.push_back(obj3_attributes.vertices[vData.vertex_index * 3]);
+                obj3_fullVertexData.push_back(obj3_attributes.vertices[vData.vertex_index * 3 + 1]);
+                obj3_fullVertexData.push_back(obj3_attributes.vertices[vData.vertex_index * 3 + 2]);
+            }
+            else {
+                std::cerr << "[OBJ3] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+                obj3_fullVertexData.push_back(0.0f);
+                obj3_fullVertexData.push_back(0.0f);
+                obj3_fullVertexData.push_back(0.0f);
+            }
+
+            if (vData.normal_index * 3 + 2 < obj3_attributes.normals.size() && vData.normal_index >= 0) {
+                obj3_fullVertexData.push_back(obj3_attributes.normals[vData.normal_index * 3]);
+                obj3_fullVertexData.push_back(obj3_attributes.normals[vData.normal_index * 3 + 1]);
+                obj3_fullVertexData.push_back(obj3_attributes.normals[vData.normal_index * 3 + 2]);
+            }
+            else {
+                //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+                obj3_fullVertexData.push_back(0.0f); // Default normal x
+                obj3_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+                obj3_fullVertexData.push_back(0.0f); // Default normal z
+            }
+
+            if (vData.texcoord_index * 2 + 1 < obj3_attributes.texcoords.size() && vData.texcoord_index >= 0) {
+                obj3_fullVertexData.push_back(obj3_attributes.texcoords[vData.texcoord_index * 2]);
+                obj3_fullVertexData.push_back(obj3_attributes.texcoords[vData.texcoord_index * 2 + 1]);
+            }
+            else {
+                std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+                obj3_fullVertexData.push_back(0.0f);
+                obj3_fullVertexData.push_back(0.0f);
+            }
+        }
+    }
+
     float skyboxVertices[]{
         -1.f, -1.f, 1.f, //0
         1.f, -1.f, 1.f,  //1
@@ -445,10 +504,10 @@ int main(void) {
     stbi_set_flip_vertically_on_load(true);
 
     //Objects
-    GLuint VAOs[2], VBOs[2];
+    GLuint VAOs[3], VBOs[3];
 
-    glGenVertexArrays(2, VAOs);
-    glGenBuffers(2, VBOs);
+    glGenVertexArrays(3, VAOs);
+    glGenBuffers(3, VBOs);
 
     // Setup for the first model
     glBindVertexArray(VAOs[0]);
@@ -484,6 +543,24 @@ int main(void) {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr2);
     glEnableVertexAttribArray(2);
 
+    // Setup for the third model
+
+    glBindVertexArray(VAOs[2]);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* obj3_fullVertexData.size(), obj3_fullVertexData.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    GLintptr normPtr3 = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr3);
+    glEnableVertexAttribArray(1);
+
+    GLintptr uvPtr3 = 6 * sizeof(GLfloat);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr3);
+    glEnableVertexAttribArray(2);
+
     glBindVertexArray(0);
 
     // Perspective matrix
@@ -491,6 +568,7 @@ int main(void) {
     // Models
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 0));
     models.push_back(Model(glm::vec3(2.0f, 0.0f, 0.0f), 1));
+    models.push_back(Model(glm::vec3(-2.0f, 0.0f, 0.0f), 2));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
@@ -573,6 +651,8 @@ int main(void) {
         // Draw the second model (earth)
         glBindTexture(GL_TEXTURE_2D, texture2);
         models[1].draw(carShader.getProg(), VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
+
+        models[2].draw(carShader.getProg(), VAOs[2], obj3_mesh_indices, obj2_fullVertexData);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
