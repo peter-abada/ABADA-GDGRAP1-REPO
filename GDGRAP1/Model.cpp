@@ -44,20 +44,23 @@ void Model::Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
            
         case GLFW_KEY_W:
 
-            rotation.x -= rotationSpeed;
+            //rotation.x -= rotationSpeed;
+            position.z += 0.05f;
 
             break;
         case GLFW_KEY_S:
 
-            rotation.x += rotationSpeed;
-
+            //rotation.x += rotationSpeed;
+            position.z -= 0.05f;
 
             break;
         case GLFW_KEY_A:
-            rotation.y -= rotationSpeed;
+            //rotation.y -= rotationSpeed;
+            position.x += 0.05f;
             break;
         case GLFW_KEY_D:
-            rotation.y += rotationSpeed;
+            //rotation.y += rotationSpeed;
+            position.x -= 0.05f;
             break;
         case GLFW_KEY_Q:
             rotation.z += rotationSpeed;

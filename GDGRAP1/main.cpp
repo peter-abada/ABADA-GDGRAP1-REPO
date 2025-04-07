@@ -18,7 +18,7 @@
 std::vector<Model> models;
 
 // Camera and light objects
-OrthoCamera orthoCamera(glm::vec3(0.0f, 5.f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+OrthoCamera orthoCamera(glm::vec3(0.0f, 1.f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 PersCamera persCamera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 Camera* currentCamera = &persCamera;
 
@@ -115,6 +115,16 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_2:
             currentCamera = &persCamera;
             break;
+        case GLFW_KEY_Z:
+            if (currentCamera = &orthoCamera) {
+                currentCamera = &persCamera;
+                std::cout << "Changing to perspective\n";
+            }
+            else if (currentCamera = &persCamera) {
+                currentCamera = &orthoCamera;
+                std::cout << "Changing to orthographic\n";
+            }
+            break;
         case GLFW_KEY_LEFT:
         case GLFW_KEY_RIGHT:
             dirLight.Key_Callback(window, key, scancode, action, mods);
@@ -188,7 +198,7 @@ int main(void) {
     };
 
     //Table texture
-    GLuint texture = loadTexture("3D/tex/black_metal.jpg");
+    GLuint texture = loadTexture("3D/world5400x2700.jpg");
 
     //Earth texture
     stbi_set_flip_vertically_on_load(true);
@@ -244,7 +254,7 @@ int main(void) {
         "World - Earth" by 3dpixel_be
         https://free3d.com/3d-model/world-16887.html
     */
-    std::string obj2_path = "3D/world.obj";
+    std::string obj2_path = "3D/racecar.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
 
@@ -258,8 +268,14 @@ int main(void) {
     }
 
     std::vector<GLuint> obj2_mesh_indices;
-    for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
+    /*for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
         obj2_mesh_indices.push_back(obj2_shapes[0].mesh.indices[i].vertex_index);
+    }*/
+
+    for (int i = 0; i < obj2_shapes.size(); i++) {
+        for (int j = 0; j < obj2_shapes[i].mesh.indices.size(); j++) {
+            obj2_mesh_indices.push_back(obj2_shapes[i].mesh.indices[j].vertex_index);
+        }
     }
 
 
@@ -308,41 +324,43 @@ int main(void) {
     }
 
     std::vector<GLfloat> obj2_fullVertexData;
-    for (int i = 0; i < obj2_shapes[0].mesh.indices.size(); i++) {
-        tinyobj::index_t vData = obj2_shapes[0].mesh.indices[i];
+    for (int i = 0; i < obj2_shapes.size(); i++) {
+        for (int j = 0; j < obj2_shapes[i].mesh.indices.size(); j++) {
+            tinyobj::index_t vData = obj2_shapes[i].mesh.indices[j];
 
-        if (vData.vertex_index * 3 + 2 < obj2_attributes.vertices.size()) {
-            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3]);
-            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 1]);
-            obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 2]);
-        }
-        else {
-            std::cerr << "[OBJ2] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
-            obj2_fullVertexData.push_back(0.0f);
-            obj2_fullVertexData.push_back(0.0f);
-            obj2_fullVertexData.push_back(0.0f);
-        }
+            if (vData.vertex_index * 3 + 2 < obj2_attributes.vertices.size()) {
+                obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3]);
+                obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 1]);
+                obj2_fullVertexData.push_back(obj2_attributes.vertices[vData.vertex_index * 3 + 2]);
+            }
+            else {
+                std::cerr << "[OBJ2] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+                obj2_fullVertexData.push_back(0.0f);
+                obj2_fullVertexData.push_back(0.0f);
+                obj2_fullVertexData.push_back(0.0f);
+            }
 
-        if (vData.normal_index * 3 + 2 < obj2_attributes.normals.size() && vData.normal_index >= 0) {
-            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3]);
-            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 1]);
-            obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
-        }
-        else {
-            //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
-            obj2_fullVertexData.push_back(0.0f); // Default normal x
-            obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
-            obj2_fullVertexData.push_back(0.0f); // Default normal z
-        }
+            if (vData.normal_index * 3 + 2 < obj2_attributes.normals.size() && vData.normal_index >= 0) {
+                obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3]);
+                obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 1]);
+                obj2_fullVertexData.push_back(obj2_attributes.normals[vData.normal_index * 3 + 2]);
+            }
+            else {
+                //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+                obj2_fullVertexData.push_back(0.0f); // Default normal x
+                obj2_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+                obj2_fullVertexData.push_back(0.0f); // Default normal z
+            }
 
-        if (vData.texcoord_index * 2 + 1 < obj2_attributes.texcoords.size() && vData.texcoord_index >= 0) {
-            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2]);
-            obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2 + 1]);
-        }
-        else {
-            std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
-            obj2_fullVertexData.push_back(0.0f);
-            obj2_fullVertexData.push_back(0.0f);
+            if (vData.texcoord_index * 2 + 1 < obj2_attributes.texcoords.size() && vData.texcoord_index >= 0) {
+                obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2]);
+                obj2_fullVertexData.push_back(obj2_attributes.texcoords[vData.texcoord_index * 2 + 1]);
+            }
+            else {
+                std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+                obj2_fullVertexData.push_back(0.0f);
+                obj2_fullVertexData.push_back(0.0f);
+            }
         }
     }
 
@@ -480,6 +498,13 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 viewMatrix = currentCamera->getViewMatrix();
+
+        //Orthographic camera always follows the player kart from the driver's position (no rotation yet)
+        orthoCamera.setPosition(models[0].getPosition() + glm::vec3(0.33f, 0.5f, 0.0f));
+
+        /*Perspective camera always follows the player kart from a third person perspective (moving with the mouse causes it to snap to a
+        lower position)*/
+        persCamera.setPosition(glm::vec3(models[0].getPosition().x, 2.0f, models[0].getPosition().z));
 
         //Render sky
         glDepthMask(GL_FALSE);
