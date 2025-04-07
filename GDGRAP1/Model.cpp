@@ -71,3 +71,9 @@ void Model::Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
         }
     }
 }
+
+void Model::ghostMove() {
+    if (id != 0) {
+        position.z += 0.005;
+    }
+}

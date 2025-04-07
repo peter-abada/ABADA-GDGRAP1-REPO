@@ -46,6 +46,8 @@ public:
     void setScale(glm::vec3& scl);
     int getId(); 
     void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+    void ghostMove();
 };
 
 #endif

@@ -29,6 +29,7 @@ float lastX = 300.f, lastY = 300.f;
 bool initialMouse = true;
 bool leftMouseButtonPressed = false;
 int selectedModelId = 0; // To check current model (debugging purposes) 
+bool ghostCarMove = false;
 
 // Mouse callback for camera control using mouse
 // Click and hold to move camera around main object
@@ -96,7 +97,8 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
         switch (key) {
         case GLFW_KEY_SPACE:
-            selectedModelId = (selectedModelId == 0) ? 1 : 0; // Swap control between the first and second models
+            ghostCarMove = !ghostCarMove;
+            //std::cout << ghostCarMove << "\n";
             break;
         case GLFW_KEY_W:
         case GLFW_KEY_S:
@@ -645,14 +647,20 @@ int main(void) {
         GLuint pointLightIntensityAddress = glGetUniformLocation(carShader.getProg(), "pointLightIntensity");
         glUniform1f(pointLightIntensityAddress, pointLight.getIntensity());
 
-        // Draw the first model (table)
+        // Draw the first model
         models[0].draw(carShader.getProg(), VAOs[0], mesh_indices, fullVertexData);
 
-        // Draw the second model (earth)
+        // Draw the second model
         glBindTexture(GL_TEXTURE_2D, texture2);
         models[1].draw(carShader.getProg(), VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
 
+        //Draw the third model
         models[2].draw(carShader.getProg(), VAOs[2], obj3_mesh_indices, obj2_fullVertexData);
+
+        if (ghostCarMove) {
+            models[1].ghostMove();
+            models[2].ghostMove();
+        }
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
