@@ -34,6 +34,7 @@ bool leftMouseButtonPressed = false;
 int selectedModelId = 0; // To check current model (debugging purposes) 
 bool ghostCarMove = false;
 bool isNight = false;
+bool isOver = false;
 
 // Mouse callback for camera control using mouse
 // Click and hold to move camera around main object
@@ -705,9 +706,9 @@ int main(void) {
     models[3].setRotation(planeRotation);
     models.push_back(Model(glm::vec3(10.0f, 0.5f, 40.0f), 4));
     models.push_back(Model(glm::vec3(-10.0f, 0.0f, 40.0f), 5));
-
+    int frames = 0;
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window) && !isOver) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -803,12 +804,15 @@ int main(void) {
         glBindTexture(GL_TEXTURE_2D, texture4);
         models[5].draw(carShader.getProg(), VAOs[3], obj4_mesh_indices, obj4_fullVertexData);
 
-
-
         if (ghostCarMove) {
             models[1].ghostMove();
             models[2].ghostMove();
         }
+
+        if (models[0].getPosition().z >= 40 && models[1].getPosition().z >= 40 && models[2].getPosition().z >= 40)
+            isOver = true;
+
+        frames++;
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -821,5 +825,8 @@ int main(void) {
     glDeleteBuffers(2, VBOs);
 
     glfwTerminate();
+
+    std::cout << "All karts finished in " << frames << " ticks\n";
+
     return 0;
 }
