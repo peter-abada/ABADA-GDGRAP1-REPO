@@ -74,6 +74,14 @@ void Model::Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
 
 void Model::ghostMove() {
     if (id != 0) {
-        position.z += 0.005;
+        switch (id) {
+        case 1:
+            position.z += 0.003;
+            break;
+        case 2:
+            position.z += 0.007;
+            break;
+        }
+
     }
 }

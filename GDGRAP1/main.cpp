@@ -22,6 +22,9 @@ OrthoCamera orthoCamera(glm::vec3(0.0f, 1.f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 PersCamera persCamera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 Camera* currentCamera = &persCamera;
 
+glm::vec3 planeRotation = glm::vec3(90.0f, 0.0f, 0.0f);
+glm::vec3 planeScale = glm::vec3(10.0f, 50.0f, 10.0f);
+
 float cameraSpeed = 0.1f;
 float yaw = -90.0f;
 float pitch = 0.0f;
@@ -30,6 +33,7 @@ bool initialMouse = true;
 bool leftMouseButtonPressed = false;
 int selectedModelId = 0; // To check current model (debugging purposes) 
 bool ghostCarMove = false;
+bool isNight = false;
 
 // Mouse callback for camera control using mouse
 // Click and hold to move camera around main object
@@ -104,12 +108,16 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_S:
         case GLFW_KEY_A:
         case GLFW_KEY_D:
-        case GLFW_KEY_Q:
-        case GLFW_KEY_E:
             models[selectedModelId].Key_Callback(window, key, scancode, action, mods);
             if (selectedModelId) {
                 pointLight.Key_Callback(window, key, scancode, action, mods);
             }
+            break;
+        case GLFW_KEY_Q:
+            isNight = false;
+            break;
+        case GLFW_KEY_E:
+            isNight = true;
             break;
         case GLFW_KEY_1:
             currentCamera = &orthoCamera;
@@ -199,12 +207,16 @@ int main(void) {
         0.f, 0.f
     };
 
-    //Table texture
+    //Car texture
     GLuint texture = loadTexture("3D/world5400x2700.jpg");
 
-    //Earth texture
+    //Floor texture
     stbi_set_flip_vertically_on_load(true);
-    GLuint texture2 = loadTexture("3D/world5400x2700.jpg");
+    GLuint texture2 = loadTexture("3D/partenza.jpg");
+
+    GLuint texture3 = loadTexture("3D/world5400x2700.jpg");
+
+    GLuint texture4 = loadTexture("3D/tex/WoodSeemles.jpg");
 
     glEnable(GL_DEPTH_TEST);
 
@@ -256,7 +268,7 @@ int main(void) {
         "World - Earth" by 3dpixel_be
         https://free3d.com/3d-model/world-16887.html
     */
-    std::string obj2_path = "3D/racecar.obj";
+    std::string obj2_path = "13Mats/plane.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
 
@@ -277,7 +289,7 @@ int main(void) {
         }
     }
 
-    std::string obj3_path = "3D/racecar.obj";
+    std::string obj3_path = "3D/world.obj";
     std::vector<tinyobj::shape_t> obj3_shapes;
     std::vector<tinyobj::material_t> obj3_material;
 
@@ -295,6 +307,27 @@ int main(void) {
     for (int i = 0; i < obj3_shapes.size(); i++) {
         for (int j = 0; j < obj3_shapes[i].mesh.indices.size(); j++) {
             obj3_mesh_indices.push_back(obj3_shapes[i].mesh.indices[j].vertex_index);
+        }
+    }
+
+    std::string obj4_path = "3D/roundtable.obj";
+    std::vector<tinyobj::shape_t> obj4_shapes;
+    std::vector<tinyobj::material_t> obj4_material;
+
+    tinyobj::attrib_t obj4_attributes;
+
+    success = tinyobj::LoadObj(&obj4_attributes, &obj4_shapes, &obj4_material, &warning, &error, obj4_path.c_str());
+
+    if (!success) {
+        std::cerr << "Failed to load model: " << error << std::endl;
+        return -1;
+    }
+
+    std::vector<GLuint> obj4_mesh_indices;
+
+    for (int i = 0; i < obj4_shapes.size(); i++) {
+        for (int j = 0; j < obj4_shapes[i].mesh.indices.size(); j++) {
+            obj4_mesh_indices.push_back(obj4_shapes[i].mesh.indices[j].vertex_index);
         }
     }
 
@@ -425,6 +458,47 @@ int main(void) {
         }
     }
 
+    std::vector<GLfloat> obj4_fullVertexData;
+    for (int i = 0; i < obj4_shapes.size(); i++) {
+        for (int j = 0; j < obj4_shapes[i].mesh.indices.size(); j++) {
+            tinyobj::index_t vData = obj4_shapes[i].mesh.indices[j];
+
+            if (vData.vertex_index * 3 + 2 < obj4_attributes.vertices.size()) {
+                obj4_fullVertexData.push_back(obj4_attributes.vertices[vData.vertex_index * 3]);
+                obj4_fullVertexData.push_back(obj4_attributes.vertices[vData.vertex_index * 3 + 1]);
+                obj4_fullVertexData.push_back(obj4_attributes.vertices[vData.vertex_index * 3 + 2]);
+            }
+            else {
+                std::cerr << "[OBJ4] Vertex index out of range: vertex_index=" << vData.vertex_index << std::endl;
+                obj4_fullVertexData.push_back(0.0f);
+                obj4_fullVertexData.push_back(0.0f);
+                obj4_fullVertexData.push_back(0.0f);
+            }
+
+            if (vData.normal_index * 3 + 2 < obj4_attributes.normals.size() && vData.normal_index >= 0) {
+                obj4_fullVertexData.push_back(obj4_attributes.normals[vData.normal_index * 3]);
+                obj4_fullVertexData.push_back(obj4_attributes.normals[vData.normal_index * 3 + 1]);
+                obj4_fullVertexData.push_back(obj4_attributes.normals[vData.normal_index * 3 + 2]);
+            }
+            else {
+                //std::cerr << "[OBJ2] Normal index out of range: normal_index=" << vData.normal_index << std::endl;
+                obj4_fullVertexData.push_back(0.0f); // Default normal x
+                obj4_fullVertexData.push_back(1.0f); // Default normal y (pointing up)
+                obj4_fullVertexData.push_back(0.0f); // Default normal z
+            }
+
+            if (vData.texcoord_index * 2 + 1 < obj4_attributes.texcoords.size() && vData.texcoord_index >= 0) {
+                obj4_fullVertexData.push_back(obj4_attributes.texcoords[vData.texcoord_index * 2]);
+                obj4_fullVertexData.push_back(obj4_attributes.texcoords[vData.texcoord_index * 2 + 1]);
+            }
+            else {
+                std::cerr << "[OBJ2] Texcoord index out of range: texcoord_index=" << vData.texcoord_index << std::endl;
+                obj4_fullVertexData.push_back(0.0f);
+                obj4_fullVertexData.push_back(0.0f);
+            }
+        }
+    }
+
     float skyboxVertices[]{
         -1.f, -1.f, 1.f, //0
         1.f, -1.f, 1.f,  //1
@@ -481,6 +555,15 @@ int main(void) {
         "Skybox/rainbow_bk.png",
     };
 
+    std::string facesNight[]{
+        "Skybox/grimmnightrt.png",
+        "Skybox/grimmnightlf.png",
+        "Skybox/grimmnightup.png",
+        "Skybox/grimmnightdn.png",
+        "Skybox/grimmnightft.png",
+        "Skybox/grimmnightbk.png"
+    };
+
     unsigned int skyTex;
 
     glGenTextures(1, &skyTex);
@@ -503,13 +586,41 @@ int main(void) {
         }
     }
 
+    /*
+        NIGHT SKYBOX CREDIT:
+        "Grimmnight" by Burnfingers
+        https://gamebanana.com/mods/7277
+    */
+
+    unsigned int nightTex;
+
+    glGenTextures(1, &nightTex);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, nightTex);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    for (unsigned int i = 0; i < 6; i++) {
+        int w, h, nightChannel;
+        stbi_set_flip_vertically_on_load(false);
+        unsigned char* data = stbi_load(facesNight[i].c_str(), &w, &h, &nightChannel, 0);
+
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+    }
+
     stbi_set_flip_vertically_on_load(true);
 
     //Objects
-    GLuint VAOs[3], VBOs[3];
+    GLuint VAOs[4], VBOs[4];
 
-    glGenVertexArrays(3, VAOs);
-    glGenBuffers(3, VBOs);
+    glGenVertexArrays(4, VAOs);
+    glGenBuffers(4, VBOs);
 
     // Setup for the first model
     glBindVertexArray(VAOs[0]);
@@ -563,6 +674,24 @@ int main(void) {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr3);
     glEnableVertexAttribArray(2);
 
+    //Setup for fourth model
+
+    glBindVertexArray(VAOs[3]);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[3]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj4_fullVertexData.size(), obj4_fullVertexData.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    GLintptr normPtr4 = 3 * sizeof(GLfloat);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)normPtr4);
+    glEnableVertexAttribArray(1);
+
+    GLintptr uvPtr4 = 6 * sizeof(GLfloat);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)uvPtr4);
+    glEnableVertexAttribArray(2);
+
     glBindVertexArray(0);
 
     // Perspective matrix
@@ -571,6 +700,11 @@ int main(void) {
     models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 0));
     models.push_back(Model(glm::vec3(2.0f, 0.0f, 0.0f), 1));
     models.push_back(Model(glm::vec3(-2.0f, 0.0f, 0.0f), 2));
+    models.push_back(Model(glm::vec3(0.0f, 0.0f, 0.0f), 3));
+    models[3].setScale(planeScale);
+    models[3].setRotation(planeRotation);
+    models.push_back(Model(glm::vec3(10.0f, 0.5f, 40.0f), 4));
+    models.push_back(Model(glm::vec3(-10.0f, 0.0f, 40.0f), 5));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
@@ -584,7 +718,7 @@ int main(void) {
 
         /*Perspective camera always follows the player kart from a third person perspective (moving with the mouse causes it to snap to a
         lower position)*/
-        persCamera.setPosition(glm::vec3(models[0].getPosition().x, 2.0f, models[0].getPosition().z));
+        persCamera.setPosition(glm::vec3(models[0].getPosition().x, 1.0f, models[0].getPosition().z));
 
         //Render sky
         glDepthMask(GL_FALSE);
@@ -602,7 +736,10 @@ int main(void) {
 
         glBindVertexArray(skyVAO);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex);
+        if (!isNight)
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex);
+        else
+            glBindTexture(GL_TEXTURE_CUBE_MAP, nightTex);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS);
@@ -651,11 +788,22 @@ int main(void) {
         models[0].draw(carShader.getProg(), VAOs[0], mesh_indices, fullVertexData);
 
         // Draw the second model
-        glBindTexture(GL_TEXTURE_2D, texture2);
-        models[1].draw(carShader.getProg(), VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        models[1].draw(carShader.getProg(), VAOs[0], mesh_indices, fullVertexData);
 
         //Draw the third model
-        models[2].draw(carShader.getProg(), VAOs[2], obj3_mesh_indices, obj2_fullVertexData);
+        models[2].draw(carShader.getProg(), VAOs[0], mesh_indices, fullVertexData);
+
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        models[3].draw(carShader.getProg(), VAOs[1], obj2_mesh_indices, obj2_fullVertexData);
+
+        glBindTexture(GL_TEXTURE_2D, texture3);
+        models[4].draw(carShader.getProg(), VAOs[2], obj3_mesh_indices, obj3_fullVertexData);
+
+        glBindTexture(GL_TEXTURE_2D, texture4);
+        models[5].draw(carShader.getProg(), VAOs[3], obj4_mesh_indices, obj4_fullVertexData);
+
+
 
         if (ghostCarMove) {
             models[1].ghostMove();
