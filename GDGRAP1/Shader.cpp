@@ -7,6 +7,9 @@ Shader::Shader(std::string vert, std::string frag, std::string ID) {
     shaderProg = loadProg(vert, frag);
 }
 
+/*
+    Function to load shader program, takes the path of vert and frag shaders as parameters
+*/
 GLuint Shader::loadProg(std::string vert, std::string frag) {
     std::fstream vertSrc(vert);
     std::stringstream vertBuff;

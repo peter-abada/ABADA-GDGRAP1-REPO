@@ -3,7 +3,6 @@
 #include <vector>
 #include <ctime>
 #include "Model.hpp"
-#include "OrthoCamera.hpp"
 #include "PersCamera.hpp"
 #include "DirLight.hpp"
 #include "PointLight.hpp"
@@ -13,14 +12,14 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
-
+#include <glm/gtx/string_cast.hpp> // Include this header for glm::to_string
 // Vector that stores an array of Model objects that will be drawn
 std::vector<Model> models;
 
 // Camera and light objects
-OrthoCamera orthoCamera(glm::vec3(0.0f, 1.f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-PersCamera persCamera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-Camera* currentCamera = &persCamera;
+PersCamera firstPersonCamera(glm::vec3(0.0f, 2.f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+PersCamera thirdPersonCamera(glm::vec3(0.0f, 4.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+Camera* currentCamera = &thirdPersonCamera;
 
 glm::vec3 planeRotation = glm::vec3(90.0f, 0.0f, 0.0f);
 glm::vec3 planeScale = glm::vec3(10.0f, 50.0f, 10.0f);
@@ -36,23 +35,20 @@ bool ghostCarMove = false;
 bool isNight = false;
 bool isOver = false;
 
-// Mouse callback for camera control using mouse
-// Click and hold to move camera around main object
 void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        leftMouseButtonPressed = true;
-    }
-    else {
-        leftMouseButtonPressed = false;
-        initialMouse = true;
+    if (initialMouse) { // fixes the mouse going crazy at the start
+        lastX = xpos;
+        lastY = ypos;
+        initialMouse = false;
     }
 
-    if (leftMouseButtonPressed && dynamic_cast<PersCamera*>(currentCamera)) {
-        if (initialMouse) { // fixes the mouse going crazy at the start
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && currentCamera == &thirdPersonCamera) {
+        if (!leftMouseButtonPressed) {
+            // Update lastX and lastY only when the left mouse button is first pressed
             lastX = xpos;
             lastY = ypos;
-            initialMouse = false;
         }
+        leftMouseButtonPressed = true;
 
         float xoffset = xpos - lastX;
         float yoffset = lastY - ypos;
@@ -76,20 +72,19 @@ void Mouse_Callback(GLFWwindow* window, double xpos, double ypos) {
         front.y = sin(glm::radians(pitch));
         front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-        // Calculate the new camera position to rotate around the main object
-        glm::vec3 target = models[0].getPosition();
-        glm::vec3 direction = glm::normalize(front);
-        float distance = glm::length(currentCamera->getPosition() - target);
-        glm::vec3 newPosition = target - direction * distance;
-
-        currentCamera->setPosition(newPosition);
-        currentCamera->setFront(glm::normalize(target - newPosition));
+        currentCamera->setFront(glm::normalize(front));
+    }
+    else {
+        leftMouseButtonPressed = false;
     }
 }
 
 // Lights
+DirLight dirLight1(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 5.0f);
+DirLight dirLight2(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 2.0f);
+DirLight* currentLight = &dirLight1;
 
-DirLight dirLight(glm::vec3(4.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
 
 PointLight pointLight(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.1f, 0.2f);
 
@@ -103,50 +98,34 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         switch (key) {
         case GLFW_KEY_SPACE:
             ghostCarMove = !ghostCarMove;
-            //std::cout << ghostCarMove << "\n";
             break;
         case GLFW_KEY_W:
         case GLFW_KEY_S:
         case GLFW_KEY_A:
         case GLFW_KEY_D:
             models[selectedModelId].Key_Callback(window, key, scancode, action, mods);
-            if (selectedModelId) {
-                pointLight.Key_Callback(window, key, scancode, action, mods);
-            }
             break;
         case GLFW_KEY_Q:
             isNight = false;
+            currentLight = &dirLight1;
             break;
         case GLFW_KEY_E:
             isNight = true;
-            break;
-        case GLFW_KEY_1:
-            currentCamera = &orthoCamera;
-            break;
-        case GLFW_KEY_2:
-            currentCamera = &persCamera;
+            currentLight = &dirLight2;
             break;
         case GLFW_KEY_Z:
-            if (currentCamera = &orthoCamera) {
-                currentCamera = &persCamera;
-                std::cout << "Changing to perspective\n";
+            if (currentCamera == &firstPersonCamera) {
+                currentCamera = &thirdPersonCamera;
             }
-            else if (currentCamera = &persCamera) {
-                currentCamera = &orthoCamera;
-                std::cout << "Changing to orthographic\n";
+            else if (currentCamera == &thirdPersonCamera) {
+                currentCamera = &firstPersonCamera;
             }
-            break;
-        case GLFW_KEY_LEFT:
-        case GLFW_KEY_RIGHT:
-            dirLight.Key_Callback(window, key, scancode, action, mods);
-            break;
-        case GLFW_KEY_UP:
-        case GLFW_KEY_DOWN:
-            pointLight.Key_Callback(window, key, scancode, action, mods);
             break;
         }
     }
 }
+
+
 
 /*
     Function to load textures from a file path
@@ -157,21 +136,21 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
 GLuint loadTexture(std::string path) {
     int imgWidth, imgHeight, colorChannels;
 
-	unsigned char* tex_bytes = stbi_load(path.c_str(), &imgWidth, &imgHeight, &colorChannels, 0);
+    unsigned char* tex_bytes = stbi_load(path.c_str(), &imgWidth, &imgHeight, &colorChannels, 0);
 
-	GLuint texture;
+    GLuint texture;
 
-	glGenTextures(1, &texture);
+    glGenTextures(1, &texture);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_bytes);
 
-	glGenerateMipmap(GL_TEXTURE_2D);
-	stbi_image_free(tex_bytes);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(tex_bytes);
 
-	return texture;
+    return texture;
 }
 
 int main(void) {
@@ -215,8 +194,10 @@ int main(void) {
     stbi_set_flip_vertically_on_load(true);
     GLuint texture2 = loadTexture("3D/partenza.jpg");
 
+    //Landmark 1 (globe) texture
     GLuint texture3 = loadTexture("3D/world5400x2700.jpg");
 
+    //Landmark 2 (table) texture
     GLuint texture4 = loadTexture("3D/tex/WoodSeemles.jpg");
 
     glEnable(GL_DEPTH_TEST);
@@ -225,7 +206,7 @@ int main(void) {
     glfwSetCursorPosCallback(window, Mouse_Callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    //Shader for the car models (we don't have a model or texture for this yet)
+    //Shader programs
 
     Shader carShader("Shaders/sample.vert", "Shaders/sample.frag", "car");
     glLinkProgram(carShader.getProg());
@@ -233,11 +214,11 @@ int main(void) {
     Shader skyShader("Shaders/skybox.vert", "Shaders/skybox.frag", "sky");
     glLinkProgram(skyShader.getProg());
 
-    // Load the first model 
+    // Load the car model 
     /*
         MODEL CREDIT:
-        "Round Table" by ksalk3d
-        https://free3d.com/3d-model/round-table-928375.html
+        "Formula 1 2025 Car" from cgtrader
+        https://www.cgtrader.com/items/3597198/download-page
     */
     std::string path = "3D/racecar.obj";
     std::vector<tinyobj::shape_t> shapes;
@@ -252,24 +233,20 @@ int main(void) {
         std::cerr << "Failed to load model: " << error << std::endl;
         return -1;
     }
-	std::cout << "Shapes: " << shapes.size() << std::endl;
+    std::cout << "Shapes: " << shapes.size() << std::endl;
     std::vector<GLuint> mesh_indices;
 
 
-	for (int i = 0; i < shapes.size(); i++) {
+    for (int i = 0; i < shapes.size(); i++) {
         for (int j = 0; j < shapes[i].mesh.indices.size(); j++) {
             mesh_indices.push_back(shapes[i].mesh.indices[j].vertex_index);
         }
-	}
-    
+    }
 
-    // Load the second model 
-    /*
-        MODEL CREDIT:
-        "World - Earth" by 3dpixel_be
-        https://free3d.com/3d-model/world-16887.html
-    */
-    std::string obj2_path = "13Mats/plane.obj";
+
+    // Load the road/plane model 
+    
+    std::string obj2_path = "3D/plane.obj";
     std::vector<tinyobj::shape_t> obj2_shapes;
     std::vector<tinyobj::material_t> obj2_material;
 
@@ -290,6 +267,12 @@ int main(void) {
         }
     }
 
+    // Load first landmark
+    /*
+        MODEL CREDIT:
+        "World - Earth" by 3dpixel_be
+        https://free3d.com/3d-model/world-16887.html
+    */
     std::string obj3_path = "3D/world.obj";
     std::vector<tinyobj::shape_t> obj3_shapes;
     std::vector<tinyobj::material_t> obj3_material;
@@ -311,6 +294,12 @@ int main(void) {
         }
     }
 
+    //Load second landmark
+    /*
+        MODEL CREDIT:
+        "Round Table" by ksalk3d
+        https://free3d.com/3d-model/round-table-928375.html
+    */
     std::string obj4_path = "3D/roundtable.obj";
     std::vector<tinyobj::shape_t> obj4_shapes;
     std::vector<tinyobj::material_t> obj4_material;
@@ -335,7 +324,7 @@ int main(void) {
 
     //Certain objects may not have normal data, this checks if the model does,
     //Otherwise, push an empty index
-    
+
     std::vector<GLfloat> fullVertexData;
     for (int i = 0; i < shapes.size(); i++) {
         for (int j = 0; j < shapes[i].mesh.indices.size(); j++) {
@@ -662,7 +651,7 @@ int main(void) {
     glBindVertexArray(VAOs[2]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* obj3_fullVertexData.size(), obj3_fullVertexData.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * obj3_fullVertexData.size(), obj3_fullVertexData.data(), GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
@@ -694,7 +683,6 @@ int main(void) {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
-
     // Perspective matrix
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), height / width, 0.1f, 100.0f);
     // Models
@@ -706,20 +694,29 @@ int main(void) {
     models[3].setRotation(planeRotation);
     models.push_back(Model(glm::vec3(10.0f, 0.5f, 40.0f), 4));
     models.push_back(Model(glm::vec3(-10.0f, 0.0f, 40.0f), 5));
+
     int frames = 0;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window) && !isOver) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glm::vec3 target = models[0].getPosition();
+
+        if (currentCamera == &thirdPersonCamera) {
+            glm::vec3 direction = glm::normalize(currentCamera->getFront());
+            float distance = glm::length(currentCamera->getPosition() - target);
+            glm::vec3 newPosition = target - direction * distance;
+            currentCamera->setPosition(newPosition);
+        }
+        else if (currentCamera == &firstPersonCamera) {
+            glm::vec3 carPosition = models[0].getPosition();
+            currentCamera->setPosition(carPosition + glm::vec3(0.0f, 1.0f, 0.0f));
+            currentCamera->setFront(firstPersonCamera.getFront());
+        }
+
         glm::mat4 viewMatrix = currentCamera->getViewMatrix();
-
-        //Orthographic camera always follows the player kart from the driver's position (no rotation yet)
-        orthoCamera.setPosition(models[0].getPosition() + glm::vec3(0.33f, 0.5f, 0.0f));
-
-        /*Perspective camera always follows the player kart from a third person perspective (moving with the mouse causes it to snap to a
-        lower position)*/
-        persCamera.setPosition(glm::vec3(models[0].getPosition().x, 1.0f, models[0].getPosition().z));
 
         //Render sky
         glDepthMask(GL_FALSE);
@@ -759,10 +756,10 @@ int main(void) {
         glUniform1i(tex0Address, 0);
 
         GLuint lightDirAddress = glGetUniformLocation(carShader.getProg(), "lightDir");
-        glUniform3fv(lightDirAddress, 1, glm::value_ptr(dirLight.getLightDir()));
+        glUniform3fv(lightDirAddress, 1, glm::value_ptr(currentLight->getLightDir()));
 
         GLuint lightColorAddress = glGetUniformLocation(carShader.getProg(), "lightColor");
-        glUniform3fv(lightColorAddress, 1, glm::value_ptr(dirLight.getLightColor()));
+        glUniform3fv(lightColorAddress, 1, glm::value_ptr(currentLight->getLightColor()));
 
         GLuint pointLightPosAddress = glGetUniformLocation(carShader.getProg(), "pointLightPos");
         glUniform3fv(pointLightPosAddress, 1, glm::value_ptr(pointLight.getPosition()));
@@ -780,7 +777,7 @@ int main(void) {
         glUniform1f(pointLightQuadraticAddress, pointLight.getQuadratic());
 
         GLuint dirLightIntensityAddress = glGetUniformLocation(carShader.getProg(), "dirLightIntensity");
-        glUniform1f(dirLightIntensityAddress, dirLight.getIntensity());
+        glUniform1f(dirLightIntensityAddress, currentLight->getIntensity());
 
         GLuint pointLightIntensityAddress = glGetUniformLocation(carShader.getProg(), "pointLightIntensity");
         glUniform1f(pointLightIntensityAddress, pointLight.getIntensity());
@@ -821,12 +818,13 @@ int main(void) {
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(2, VAOs);
-    glDeleteBuffers(2, VBOs);
+    glDeleteVertexArrays(4, VAOs);
+    glDeleteBuffers(4, VBOs);
 
     glfwTerminate();
 
     std::cout << "All karts finished in " << frames << " ticks\n";
 
     return 0;
+
 }
